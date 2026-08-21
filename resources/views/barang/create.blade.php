@@ -91,7 +91,7 @@
                         </div>
                     </div>
                     <div class="row mb-3">
-                        <label class="col-sm-2 col-form-label" for="basic-icon-default-email">foto</label>
+                        <label class="col-sm-2 col-form-label" for="basic-icon-default-email">Foto</label>
                         <div class="col-sm-10">
                             <div class="input-group input-group-merge">
                                 <span class="input-group-text"><i class="bx bx-image-add"></i></span>

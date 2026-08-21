@@ -7,11 +7,15 @@
     <div class="row g-4 mb-5">
         <!-- Gambar dan info singkat produk -->
         <div class="col-md-6 col-lg-4">
-            <div class="card">
-                <img class="card-img-top p-3" src="{{ asset('/image/barang/' . $barang->foto) }}" alt="Card image cap" />
-                <div class="card-body">
-
-                </div>
+            <div class="card h-100 d-flex align-items-center justify-content-center">
+                @if ($barang->foto)
+                    <img class="card-img-top p-3" src="{{ asset('/image/barang/' . $barang->foto) }}" alt="{{ $barang->nama }}" style="max-height: 300px; object-fit: contain;" />
+                @else
+                    <div class="text-center p-5 text-muted">
+                        <i class="bx bx-image-alt fs-1 d-block mb-2"></i>
+                        Tidak ada foto barang
+                    </div>
+                @endif
             </div>
         </div>
 

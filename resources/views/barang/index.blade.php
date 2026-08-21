@@ -119,10 +119,14 @@
                                 @endif
                             </td>
                             <td>
-                                <a href="../image/barang/{{ $data->foto }}" target="_blank">
-                                    <img style="width: 50px; border-radius: 5px; box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.1);"
-                                        src="{{ asset('/image/barang/' . $data->foto) }}" alt="">
-                                </a>
+                                @if ($data->foto)
+                                    <a href="../image/barang/{{ $data->foto }}" target="_blank">
+                                        <img style="width: 50px; border-radius: 5px; box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.1);"
+                                            src="{{ asset('/image/barang/' . $data->foto) }}" alt="">
+                                    </a>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
                             </td>
                             <td>{{ $data->stok }}</td>
                             @if ($status == 'admin')

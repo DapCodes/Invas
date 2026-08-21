@@ -113,7 +113,7 @@ class BarangController extends Controller
         $request->validate([
             'nama' => 'required',
             'merek' => 'required',
-            'foto' => 'image|required|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'status_barang' => 'required',
             'vendor_id' => 'nullable|exists:vendors,id',
             'serial_number' => 'nullable|string|max:255',
@@ -121,9 +121,8 @@ class BarangController extends Controller
         [
             'nama.required' => 'Nama Barang tidak boleh kosong',
             'merek.required' => 'Merek Barang tidak boleh kosong',
-            'foto.required' => 'Gambar tidak boleh kosong.',
             'foto.image' => 'File yang diupload harus berupa gambar',
-            'foto.mimes' => 'File yang diupload harus berupa jpeg, png, jpg, gif',
+            'foto.mimes' => 'File yang diupload harus berupa jpeg, png, jpg, gif, webp',
             'foto.max' => 'Ukuran file tidak boleh lebih dari 2MB',
             'status_barang.required' => 'Pilih status barang dengan benar (RPL, TBSM, TKRO, Umum)',
             'vendor_id.exists' => 'Vendor yang dipilih tidak valid',
@@ -147,6 +146,8 @@ class BarangController extends Controller
             $name = rand(1000,9999) . $img->getClientOriginalName();
             $img->move('image/barang', $name);
             $barang->foto = $name;
+        } else {
+            $barang->foto = null;
         }
 
         $barang->status_barang = $request->status_barang;
@@ -189,7 +190,7 @@ class BarangController extends Controller
         $request->validate([
             'nama' => 'required',
             'merek' => 'required',
-            'foto' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'vendor_id' => 'nullable|exists:vendors,id',
             'serial_number' => 'nullable|string|max:255',
         ],
@@ -197,7 +198,7 @@ class BarangController extends Controller
             'nama.required' => 'Nama Barang tidak boleh kosong',
             'merek.required' => 'Merek Barang tidak boleh kosong',
             'foto.image' => 'File yang diupload harus berupa gambar',
-            'foto.mimes' => 'File yang diupload harus berupa jpeg, png, jpg, gif',
+            'foto.mimes' => 'File yang diupload harus berupa jpeg, png, jpg, gif, webp',
             'foto.max' => 'Ukuran file tidak boleh lebih dari 2MB',
             'vendor_id.exists' => 'Vendor yang dipilih tidak valid',
         ]);
