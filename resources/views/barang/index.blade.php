@@ -36,27 +36,13 @@
                     value="{{ request('search') }}">
             </div>
 
-            {{-- Filter Status --}}
-            @if (Auth::user()->status_user == 'admin')
-                <div class="col-md-4">
-                    <label for="status_barang" class="form-label">Status Barang</label>
-                    <select name="status_barang" id="status_barang" class="form-select">
-                        <option value="">Semua Status</option>
-                        @foreach ($statusOptions as $option)
-                            <option value="{{ $option }}" {{ request('status_barang') == $option ? 'selected' : '' }}>
-                                {{ strtoupper($option) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            @endif
 
             {{-- Tombol --}}
             <div class="col-md-4 d-flex gap-2">
                 <button type="submit" class="btn btn-primary">
                     <i class="bx bx-search"></i> Cari
                 </button>
-                @if (request()->has('search') || request()->has('status_barang'))
+                @if (request()->has('search'))
                     <a href="{{ route('barang.index') }}" class="btn btn-secondary">
                         <i class="bx bx-refresh"></i> Reset
                     </a>
@@ -85,12 +71,6 @@
                         <th>Nomor Seri</th>
                         <th>Foto</th>
                         <th>Stok</th>
-                        @php
-                            $status = Auth::user()->status_user;
-                        @endphp
-                        @if ($status == 'admin')
-                            <th>Status</th>
-                        @endif
                         <th>Kreator</th>
                         <th class="text-center">Aksi</th>
                     </tr>
@@ -129,9 +109,6 @@
                                 @endif
                             </td>
                             <td>{{ $data->stok }}</td>
-                            @if ($status == 'admin')
-                                <td>{{ $data->status_barang }}</td>
-                            @endif
                             <td>{{ $data->user->name }}</td>
                             <td class="text-center">
                                 <div class="dropdown">

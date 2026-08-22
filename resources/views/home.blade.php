@@ -2,622 +2,418 @@
 @section('page-title', 'Beranda')
 
 @section('content')
-    <div class="row mb-4">
-        <div class="col-lg-12">
-            <div class="card shadow-sm border-0">
-                <div class="row g-0 align-items-center">
-                    <div class="col-md-7">
-                        <div class="card-body animate__animated animate__fadeIn">
-                            @if (Auth::user()->status_user == 'admin')
-                                <small class="text-muted fst-italic">Admin</small>
-                            @endif
-                            @if (Auth::user()->status_user != 'admin')
-                                <small class="text-muted fst-italic">Petugas {{ Auth::user()->status_user }}</small>
-                            @endif
+<style>
+    /* Home App Launcher Custom Styling */
+    .launcher-header {
+        margin-bottom: 1.5rem;
+    }
 
-                            <h6 class="card-title text-muted mb-2">Selamat Datang <strong>{{ Auth::user()->name }}</strong></h6>
+    .launcher-greeting {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: -0.5px;
+        margin-bottom: 0.25rem;
+    }
 
-                            <!-- Teks Animasi -->
-                            <div style="height: 40px; width: 100%; overflow: hidden; border-radius: 8px; margin-top: 10px;">
-                                <h2 id="typing" style="
-                                    margin: 0;
-                                    white-space: nowrap;
-                                    font-weight: bold;
-                                    background: linear-gradient(90deg, #6a6aff, #00c9a7,rgb(255, 238, 0));
-                                    -webkit-background-clip: text;
-                                    -webkit-text-fill-color: transparent;
-                                    background-clip: text;
-                                    color: transparent;
-                                ">
-                                </h2>
-                            </div>
+    .launcher-subtitle {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-bottom: 0;
+    }
 
-                            <!-- Deskripsi -->
-                            <p class="mb-3 mt-3 text-secondary">
-                                <strong>INVAS</strong> mempermudah pendataan logistikmu secara efisien dan terstruktur.<br>
-                                Ayo mulai cek statistik logistikmu hari ini!
-                            </p>
+    /* Minimal Search Bar */
+    .launcher-search-box {
+        max-width: 480px;
+        position: relative;
+        margin-bottom: 1.75rem;
+    }
 
-                            <!-- Tombol Aksi -->
-                            <a href="{{ route('admin.statistik') }}" class="btn btn-outline-primary btn-s">
-                                <i class="bx bx-grid-alt"></i> Lihat Statistik!
-                            </a>
-                        </div>
-                    </div>
+    .launcher-search-input {
+        width: 100%;
+        padding: 0.65rem 2.5rem 0.65rem 2.5rem;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 0.88rem;
+        color: #0f172a;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        transition: all 0.2s ease;
+    }
 
-                    <!-- Ilustrasi -->
-                    <div class="col-md-5 text-center">
-                        <img src="../admin/assets/img/illustrations/man-with-laptop-light.png" height="140" alt="Ilustrasi Pengguna"
-                            data-app-dark-img="illustrations/man-with-laptop-dark.png"
-                            data-app-light-img="illustrations/man-with-laptop-light.png"
-                            class="img-fluid p-3 animate__animated animate__fadeInRight"/>
-                    </div>
-                </div>
-            </div>
+    .launcher-search-input:focus {
+        outline: none;
+        border-color: var(--invas-primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    .launcher-search-icon {
+        position: absolute;
+        left: 0.85rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.15rem;
+        color: #94a3b8;
+    }
+
+    .launcher-search-badge {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        padding: 1px 6px;
+        background: #f1f5f9;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #94a3b8;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Section Label */
+    .launcher-section-title {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        color: #94a3b8;
+        margin-bottom: 0.85rem;
+    }
+
+    /* App Launcher Grid Item */
+    .launcher-tile {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 1.25rem 0.85rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        text-decoration: none;
+        color: #0f172a;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        height: 100%;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    .launcher-tile:hover {
+        transform: translateY(-3px);
+        border-color: #cbd5e1;
+        box-shadow: 0 8px 18px -4px rgba(15, 23, 42, 0.06);
+        color: var(--invas-primary);
+    }
+
+    .launcher-tile:active {
+        transform: scale(0.97);
+    }
+
+    .launcher-tile-icon {
+        width: 48px;
+        height: 48px;
+        background: #eff6ff;
+        color: var(--invas-primary);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 0.75rem;
+        transition: all 0.2s ease;
+    }
+
+    .launcher-tile:hover .launcher-tile-icon {
+        background: var(--invas-primary);
+        color: #ffffff;
+    }
+
+    .launcher-tile-name {
+        font-size: 0.88rem;
+        font-weight: 600;
+        line-height: 1.25;
+        color: #0f172a;
+    }
+
+    .launcher-tile:hover .launcher-tile-name {
+        color: var(--invas-primary);
+    }
+
+    /* Recent Notification Section */
+    .recent-summary-section {
+        margin-top: 2.25rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .recent-mini-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        text-decoration: none;
+        color: #334155;
+        transition: all 0.18s ease;
+    }
+
+    .recent-mini-card:hover {
+        border-color: #cbd5e1;
+        color: var(--invas-primary);
+        background: #f8fafc;
+    }
+
+    @media (max-width: 767.98px) {
+        .launcher-tile {
+            padding: 1rem 0.65rem;
+            border-radius: 14px;
+        }
+
+        .launcher-tile-icon {
+            width: 42px;
+            height: 42px;
+            font-size: 1.35rem;
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+        }
+
+        .launcher-tile-name {
+            font-size: 0.8rem;
+        }
+    }
+</style>
+
+{{-- Header Greeting --}}
+<div class="launcher-header">
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <h4 class="launcher-greeting">Selamat Datang, {{ Auth::user()->name }}</h4>
+            <p class="launcher-subtitle">Pilih menu layanan logistik yang ingin digunakan</p>
         </div>
+        <span class="badge bg-label-primary font-monospace small d-none d-md-inline-block">
+            {{ Auth::user()->is_admin ? 'ADMIN' : 'PETUGAS' }}
+        </span>
+    </div>
+</div>
+
+{{-- Instant Filter Search Bar --}}
+<div class="launcher-search-box">
+    <i class="bx bx-search launcher-search-icon"></i>
+    <input type="text" 
+           id="launcherSearchInput" 
+           class="launcher-search-input" 
+           placeholder="Cari menu fitur..." 
+           autocomplete="off" />
+    <span class="launcher-search-badge">/</span>
+</div>
+
+{{-- Section Title --}}
+<div class="launcher-section-title">
+    <span>MENU APLIKASI</span>
+</div>
+
+{{-- App Launcher Grid (1 MENU = 1 KOTAK) --}}
+<div class="row row-cols-2 row-cols-sm-3 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-2 g-md-3 mb-4" id="launcherGrid">
+    {{-- 1. Pinjam Barang (Prioritas Utama) --}}
+    <div class="col launcher-item" data-keywords="pinjam peminjaman barang transaksi alat">
+        <a href="{{ route('peminjaman.index') }}" class="launcher-tile">
+            <div class="launcher-tile-icon">
+                <i class="bx bx-upload"></i>
+            </div>
+            <div class="launcher-tile-name">Pinjam Barang</div>
+        </a>
     </div>
 
+    {{-- 2. Data Barang --}}
+    <div class="col launcher-item" data-keywords="data barang master inventori produk stok">
+        <a href="{{ route('barang.index') }}" class="launcher-tile">
+            <div class="launcher-tile-icon">
+                <i class="bx bx-package"></i>
+            </div>
+            <div class="launcher-tile-name">Data Barang</div>
+        </a>
+    </div>
+
+    {{-- 3. Barang Masuk --}}
+    <div class="col launcher-item" data-keywords="barang masuk pengadaan mutasi tambah stok">
+        <a href="{{ route('brg-masuk.index') }}" class="launcher-tile">
+            <div class="launcher-tile-icon">
+                <i class="bx bx-log-in-circle"></i>
+            </div>
+            <div class="launcher-tile-name">Barang Masuk</div>
+        </a>
+    </div>
+
+    {{-- 4. Barang Keluar --}}
+    <div class="col launcher-item" data-keywords="barang keluar mutasi distribusi kurangi stok">
+        <a href="{{ route('brg-keluar.index') }}" class="launcher-tile">
+            <div class="launcher-tile-icon">
+                <i class="bx bx-log-out-circle"></i>
+            </div>
+            <div class="launcher-tile-name">Barang Keluar</div>
+        </a>
+    </div>
+
+    {{-- 5. Pengembalian --}}
+    <div class="col launcher-item" data-keywords="pengembalian kembali barang selesai riwayat">
+        <a href="{{ route('pengembalian.index') }}" class="launcher-tile">
+            <div class="launcher-tile-icon">
+                <i class="bx bx-history"></i>
+            </div>
+            <div class="launcher-tile-name">Pengembalian</div>
+        </a>
+    </div>
+
+    {{-- 6. Barang Ruangan --}}
+    <div class="col launcher-item" data-keywords="barang ruangan stok sebaran distribusi lokasi">
+        <a href="{{ route('brg-ruangan.index') }}" class="launcher-tile">
+            <div class="launcher-tile-icon">
+                <i class="bx bx-box"></i>
+            </div>
+            <div class="launcher-tile-name">Barang Ruangan</div>
+        </a>
+    </div>
+
+    {{-- 7. Data Vendor --}}
+    <div class="col launcher-item" data-keywords="vendor supplier penyedia rekanan toko">
+        <a href="{{ route('vendor.index') }}" class="launcher-tile">
+            <div class="launcher-tile-icon">
+                <i class="bx bx-store"></i>
+            </div>
+            <div class="launcher-tile-name">Data Vendor</div>
+        </a>
+    </div>
+
+    {{-- 8. Data Ruangan (Admin) --}}
+    @if (Auth::user()->is_admin == 1)
+        <div class="col launcher-item" data-keywords="data ruangan kelas bengkel laboratorium lab lokasi">
+            <a href="{{ route('ruangan.index') }}" class="launcher-tile">
+                <div class="launcher-tile-icon">
+                    <i class="bx bx-building-house"></i>
+                </div>
+                <div class="launcher-tile-name">Data Ruangan</div>
+            </a>
+        </div>
+    @endif
+
+    {{-- 9. Data Petugas (Admin) --}}
+    @if (Auth::user()->is_admin == 1)
+        <div class="col launcher-item" data-keywords="petugas karyawan user admin akun staf pengguna">
+            <a href="{{ route('karyawan.index') }}" class="launcher-tile">
+                <div class="launcher-tile-icon">
+                    <i class="bx bx-id-card"></i>
+                </div>
+                <div class="launcher-tile-name">Data Petugas</div>
+            </a>
+        </div>
+    @endif
+
+    {{-- 10. Statistik & Laporan --}}
+    <div class="col launcher-item" data-keywords="statistik laporan grafik analitik diagram report">
+        <a href="{{ route('admin.statistik') }}" class="launcher-tile">
+            <div class="launcher-tile-icon">
+                <i class="bx bx-line-chart"></i>
+            </div>
+            <div class="launcher-tile-name">Statistik</div>
+        </a>
+    </div>
+</div>
+
+{{-- No Results Alert --}}
+<div id="noResultsMsg" class="alert alert-light border text-center p-3 d-none">
+    <small class="text-muted">Menu tidak ditemukan. Coba cari dengan kata kunci lain.</small>
+</div>
+
+{{-- Notifikasi / Data Terbaru 1 Minggu Terakhir --}}
 @php
     use Carbon\Carbon;
     $startDate = Carbon::now()->subDays(7)->translatedFormat('d F Y');
     $endDate = Carbon::now()->translatedFormat('d F Y');
 
-    $cards = [
-        [
-            'title' => 'Data Barang Masuk',
-            'total' => $barangMasuk,
-            'stok' => $totalStokMasuk,
-            'route' => 'brg-masuk.index',
-            'icon' => '/admin/assets/img/gif-icons/masuk.png',
-            'bg' => 'bg-primary'
-        ],
-        [
-            'title' => 'Data Barang Keluar',
-            'total' => $barangKeluar,
-            'stok' => $totalStokKeluar,
-            'route' => 'brg-keluar.index',
-            'icon' => '/admin/assets/img/gif-icons/keluar.png',
-            'bg' => 'bg-warning'
-        ],
-        [
-            'title' => 'Data Peminjaman',
-            'total' => $peminjaman,
-            'stok' => $peminjamanStok,
-            'route' => 'peminjaman.index',
-            'icon' => '/admin/assets/img/gif-icons/pinjam.png',
-            'bg' => 'bg-info'
-        ],
-        [
-            'title' => 'Data Pengembalian',
-            'total' => $pengembalian,
-            'stok' => $pengembalianStok,
-            'route' => 'pengembalian.index',
-            'icon' => '/admin/assets/img/gif-icons/kembali.png',
-            'bg' => 'bg-success'
-        ],
+    $recentMetrics = [
+        ['label' => 'Barang Masuk', 'count' => $barangMasuk, 'route' => 'brg-masuk.index', 'icon' => 'bx-log-in-circle'],
+        ['label' => 'Barang Keluar', 'count' => $barangKeluar, 'route' => 'brg-keluar.index', 'icon' => 'bx-log-out-circle'],
+        ['label' => 'Peminjaman', 'count' => $peminjaman, 'route' => 'peminjaman.index', 'icon' => 'bx-upload'],
+        ['label' => 'Pengembalian', 'count' => $pengembalian, 'route' => 'pengembalian.index', 'icon' => 'bx-history'],
     ];
-
-    // Filter kartu dengan data baru
-    $cards = array_filter($cards, fn($card) => $card['total'] > 0);
 @endphp
 
-<div class="mb-4">
-    <h5 class="fw-bold">Data Terbaru 1 Minggu Terakhir 
-        @if (Auth::user()->is_admin === 1)
-            <span class="badge bg-primary ms-1">Admin - Keseluruhan</span>
-        @else
-            <span class="badge bg-secondary ms-1">{{ Auth::user()->status_user }}</span>
-        @endif
-    </h5>
-    <p class="text-muted mb-0"><small>Periode: {{ $startDate }} s/d {{ $endDate }}</small></p>
-</div>
-
-<div class="row">
-    @forelse ($cards as $card)
-        <div class="col-md-6 col-xl-4 mb-4">
-            <div class="card shadow-sm border-0 h-100">
-                <div class="card-body d-flex flex-column justify-content-between">
-                    <div class="d-flex align-items-center mb-3">
-                        <img src="{{ asset($card['icon']) }}" alt="icon" style="width: 32px; height: 32px;">
-                        <div class="ms-3">
-                            <h6 class="mb-0 fw-semibold">{{ $card['title'] }}</h6>
-                            <small class="text-muted">Data dan stok terbaru</small>
-                        </div>
-                        <div class="ms-auto">
-                            <div class="dropdown">
-                                <button class="btn btn-sm text-muted" data-bs-toggle="dropdown">
-                                    <i class="bx bx-dots-vertical-rounded"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li>
-                                        <a class="dropdown-item" href="{{ route($card['route']) }}">
-                                            <i class="bx bx-show me-2"></i>Lihat Detail
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row text-center">
-                        <div class="col-6">
-                            <div class="text-muted small">Total Data</div>
-                            <h5 class="fw-bold text-{{ $card['total'] > 0 ? 'success' : 'danger' }}">{{ $card['total'] }}</h5>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-muted small">Total Stok</div>
-                            <h5 class="fw-bold text-{{ $card['stok'] > 0 ? 'primary' : 'danger' }}">{{ $card['stok'] }}</h5>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<div class="recent-summary-section">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <div class="launcher-section-title mb-0">
+            <span>DATA TERBARU 1 MINGGU TERAKHIR</span>
         </div>
-    @empty
-        <div class="col-12">
-            <div class="alert alert-light border d-flex align-items-center" role="alert">
-                <i class="bx bx-info-circle text-primary fs-4 me-2"></i>
-                <div>
-                    Tidak ada data baru yang masuk selama 7 hari terakhir. Silakan cek kembali nanti.
-                </div>
+        <small class="text-muted font-monospace" style="font-size: 0.7rem;">{{ $startDate }} - {{ $endDate }}</small>
+    </div>
+
+    <div class="row g-2">
+        @foreach ($recentMetrics as $metric)
+            <div class="col-6 col-md-3">
+                <a href="{{ route($metric['route']) }}" class="recent-mini-card">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bx {{ $metric['icon'] }} text-muted fs-5"></i>
+                        <span class="small fw-semibold text-dark">{{ $metric['label'] }}</span>
+                    </div>
+                    <span class="badge bg-label-{{ $metric['count'] > 0 ? 'primary' : 'secondary' }} rounded-pill">{{ $metric['count'] }}</span>
+                </a>
             </div>
-        </div>
-    @endforelse
+        @endforeach
+    </div>
 </div>
-
-
-
-
 
 @if (session('success_login'))
     <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
-        <div class="toast show bg-white shadow border-0" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header">
-                <img src="{{ asset('admin/assets/img/favicon/gudangku-icon.ico') }}" class="rounded me-2" alt="Logo" width="18">
-                <strong class="me-auto text-dark">Invas</strong>
+        <div class="toast show bg-white shadow-sm border rounded-3" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header border-bottom py-2">
+                <strong class="me-auto text-dark small">INVAS</strong>
                 <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
-            <div class="toast-body text-dark">
+            <div class="toast-body text-dark py-2 small">
                 {{ session('success_login') }}
             </div>
         </div>
     </div>
 @endif
 
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+{{-- Quick Filter Script --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('launcherSearchInput');
+        const items = document.querySelectorAll('.launcher-item');
+        const noResults = document.getElementById('noResultsMsg');
 
-    <script>
-        const texts = ["Selamat Datang di INVAS!!", "Inventaris SMK Assalaam"];
-    let count = 0;
-    let index = 0;
-    let currentText = "";
-    let letter = "";
-
-    function type() {
-      if (count === texts.length) {
-        count = 0;
-      }
-
-      currentText = texts[count];
-      letter = currentText.slice(0, ++index);
-
-      document.getElementById("typing").textContent = letter;
-
-      if (letter.length === currentText.length) {
-        setTimeout(() => {
-          erase();
-        }, 2000); // jeda 2 detik sebelum hapus
-      } else {
-        setTimeout(type, 100); // kecepatan ngetik
-      }
-    }
-
-    function erase() {
-      letter = currentText.slice(0, --index);
-      document.getElementById("typing").textContent = letter;
-
-      if (letter.length === 0) {
-        count++;
-        setTimeout(type, 300); // jeda sebelum lanjut teks berikutnya
-      } else {
-        setTimeout(erase, 50); // kecepatan hapus
-      }
-    }
-
-    // mulai
-    type();
-    </script>
-
-@endsection
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!--  ini chart statistik
-            <div class="col-lg-12 mt-4">
-                <div class="card p-4">
-                    <div class="card-body">
-                        <div id="chart" style="height: 390.9px;"></div>
-                    </div>
-                </div>
-            </div> 
-            
-            
-                    //statistik semua data
-        document.addEventListener('DOMContentLoaded', function() {
-            var options = {
-                chart: {
-                    type: 'bar',
-                    height: 350,
-                    toolbar: {
-                        show: false
-                    }
-                },
-                series: [{
-                    name: 'Jumlah',
-                    data: {!! json_encode($chartData['series']) !!}
-                }],
-                xaxis: {
-                    categories: {!! json_encode($chartData['labels']) !!},
-                    labels: {
-                        style: {
-                            fontSize: '10px',
-                            colors: '#6B7280'
-                        }
-                    }
-                },
-                plotOptions: {
-                    bar: {
-                        borderRadius: 10,
-                        borderRadiusApplication: 'end',
-                        borderRadiusWhenStacked: 'last',
-                        distributed: true,
-                        columnWidth: '55%',
-                    }
-                },
-                dataLabels: {
-                    enabled: true,
-                    style: {
-                        fontSize: '13px',
-                        colors: ['#fff']
-                    }
-                },
-                tooltip: {
-                    theme: 'light',
-                    y: {
-                        formatter: function(val) {
-                            return val + ' data';
-                        }
-                    }
-                },
-                grid: {
-                    borderColor: '#E5E7EB',
-                    strokeDashArray: 4
-                },
-                legend: {
-                    show: true,
-                    position: 'bottom',
-                    itemMargin: {
-                        horizontal: 10,
-                        vertical: 8 // memberi jarak antar item legend
-                    }
+        if (searchInput) {
+            document.addEventListener('keydown', function (e) {
+                if (e.key === '/' && document.activeElement !== searchInput) {
+                    e.preventDefault();
+                    searchInput.focus();
                 }
-            };
+            });
 
-            var chart = new ApexCharts(document.querySelector("#chart"), options);
-            chart.render();
-        });-->
+            searchInput.addEventListener('input', function () {
+                const query = this.value.toLowerCase().trim();
+                let matched = 0;
 
+                items.forEach(function (item) {
+                    const name = item.querySelector('.launcher-tile-name').textContent.toLowerCase();
+                    const keywords = item.getAttribute('data-keywords') || '';
 
+                    if (name.includes(query) || keywords.includes(query)) {
+                        item.style.display = '';
+                        matched++;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
 
-
-
-
-
-        <!-- 
-        data peminjaman pengembalian
-<div class="card">
-                <div class="card-header d-flex align-items-center justify-content-between pb-0">
-                    <div class="card-title mb-0">
-                        <h5 class="m-0 me-2">Data Peminjaman / Pengembalian</h5>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="d-flex flex-column gap-1" style="position: relative; bottom: 15px;">
-                            <span>Peminjaman <strong>{{ $peminjaman }}</strong></span>
-                            <span>Pengembalian <strong>{{ $pengembalian }}</strong></span>
-                        </div>
-                        <div id="orderStatisticsChart"></div>
-                    </div>
-                    <ul class="p-0 m-0">
-                        <li class="d-flex mb-4 pb-1">
-                            <div class="avatar flex-shrink-0 me-3">
-                                <img src="../admin/assets/img/gif-icons/kembali.png" alt="">
-                            </div>
-                            <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                <div class="me-2">
-                                    <h6 class="mb-0">Peminjaman</h6>
-                                    <small class="text-muted">Total peminjaman barang</small>
-                                </div>
-                                <div class="user-progress">
-                                    <small class="fw-semibold">{{ $peminjaman }}x</small>
-                                </div>
-                            </div>
-                        </li>
-                        <li class="d-flex">
-                            <div class="avatar flex-shrink-0 me-3">
-                                <img src="../admin/assets/img/gif-icons/pinjam.png" alt="">
-                            </div>
-                            <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                                <div class="me-2">
-                                    <h6 class="mb-0">Pengembalian</h6>
-                                    <small class="text-muted">Total pengembalian barang</small>
-                                </div>
-                                <div class="user-progress">
-                                    <small class="fw-semibold">{{ $pengembalian }}x</small>
-                                </div>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-
-
-
-                document.addEventListener('DOMContentLoaded', function() {
-            const config = {
-                colors: {
-                    primary: '#3B82F6',
-                    secondary: '#64748B',
-                    info: '#0EA5E9',
-                    success: '#10B981',
-                    danger: '#EF4444'
+                if (matched === 0 && query.length > 0) {
+                    noResults.classList.remove('d-none');
+                } else {
+                    noResults.classList.add('d-none');
                 }
-            };
-            const cardColor = '#fff';
-            const headingColor = '#111827';
-            const axisColor = '#6B7280';
-
-            const chartOrderStatistics = document.querySelector('#orderStatisticsChart');
-            const orderChartConfig = {
-                chart: {
-                    height: 165,
-                    width: 130,
-                    type: 'donut'
-                },
-                labels: {!! json_encode($chartData['pinjamkembali']) !!},
-                series: {!! json_encode($chartData['pinjamkembaliseries']) !!},
-                colors: [config.colors.danger, config.colors.success],
-                stroke: {
-                    width: 5,
-                    colors: cardColor
-                },
-                dataLabels: {
-                    enabled: false,
-                    formatter: function(val, opt) {
-                        return parseInt(val) + '%';
-                    }
-                },
-                legend: {
-                    show: false
-                },
-                grid: {
-                    padding: {
-                        top: 0,
-                        bottom: 0,
-                        right: 15
-                    }
-                },
-                plotOptions: {
-                    pie: {
-                        donut: {
-                            size: '85%',
-                            labels: {
-                                show: true,
-                                value: {
-                                    fontSize: '1.5rem',
-                                    fontFamily: 'Public Sans',
-                                    color: headingColor,
-                                    offsetY: -15,
-                                    formatter: function(val) {
-                                        return parseInt(val);
-                                    }
-                                },
-                                name: {
-                                    offsetY: 20,
-                                    fontFamily: 'Public Sans'
-                                },
-                                total: {
-                                    show: true,
-                                    fontSize: '0.8125rem',
-                                    color: axisColor,
-                                    label: 'Total',
-                                    formatter: function(w) {
-                                        return '{{ $peminjaman + $pengembalian }}';
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            };
-
-            if (chartOrderStatistics !== null) {
-                const statisticsChart = new ApexCharts(chartOrderStatistics, orderChartConfig);
-                statisticsChart.render();
-            }
-        });
-        
-        -->
-
-
-
-
-
-        <!-- 
-        keluar dan masuk
-
-
-                    <div class="row mt-4">
-                <div class="col-lg-6 col-md-12 col-6 mb-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="card-title d-flex align-items-start justify-content-between">
-                                <div class="avatar flex-shrink-0">
-                                    <img src="../admin/assets/img/gif-icons/barang-masuk.png" alt="chart success"
-                                        class="rounded" />
-                                </div>
-                                <div class="dropdown">
-                                    <button class="btn p-0" type="button" id="cardOpt3" data-bs-toggle="dropdown"
-                                        aria-haspopup="true" aria-expanded="false">
-                                        <i class="bx bx-dots-vertical-rounded"></i>
-                                    </button>
-                                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt3">
-                                        <a class="dropdown-item" href="{{ route('brg-masuk.index') }}">Lihat Detail</a>
-                                    </div>
-                                </div>
-                            </div>
-                            <span class="fw-semibold d-block mb-1">Keseluruhan</span>
-                            <small class="text-muted">total barang</small>
-                            <h3 class="card-title mb-2">{{ $totalStokMasuk }}</h3>
-
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6 col-md-12 col-6 mb-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="card-title d-flex align-items-start justify-content-between">
-                                <div class="avatar flex-shrink-0">
-                                    <img src="../admin/assets/img/gif-icons/petugas.png" alt="chart success"
-                                        class="rounded" />
-                                </div>
-                                <div class="dropdown">
-                                    <button class="btn p-0" type="button" id="cardOpt3" data-bs-toggle="dropdown"
-                                        aria-haspopup="true" aria-expanded="false">
-                                        <i class="bx bx-dots-vertical-rounded"></i>
-                                    </button>
-                                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt3">
-                                        <a class="dropdown-item" href="{{ route('brg-keluar.index') }}">Lihat Detail</a>
-                                    </div>
-                                </div>
-                            </div>
-                            <span class="fw-semibold d-block mb-1">Barang Keluar</span>
-                            <small class="text-muted">jumlah</small>
-                            <h3 class="card-title mb-2">{{ $totalStokKeluar }}</h3>
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-        
-        
-        -->
-
-
-
-
-
-
-        <!-- AKTITAS KESELURUHAN
-         <div class="row">
-        <div class="col-md-2">
-            <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between flex-sm-row flex-column gap-3 mb-2">
-                                <div class="d-flex flex-sm-column flex-row align-items-start justify-content-between">
-                                    <div class="card-title">
-                                        <h5 class="text-nowrap mb-2">Total Aktivitas</h5>
-                                        <span class="badge bg-label-warning rounded-pill">Keseluruhan</span>
-                                    </div>
-                                    <div class="mt-sm-auto d-flex gap-2">
-                                        <h3 class="mb-0">{{ $total }}</h3>
-                                        <small style="position: relative; top: 5px;" class="text-muted">aktivitas</small>
-                                    </div>
-                                </div>
-                                <div id="profileReportChart"></div>
-                            </div>
-                            <small>Aktivitas Keseluruhan</small>
-                        </div>
-                    </div>
-        </div>
-    </div>
-    
-    
-
-
-
-
-
-                const profileReportChartEl = document.querySelector('#profileReportChart'),
-            profileReportChartConfig = {
-                chart: {
-                    height: 80,
-                    // width: 175,
-                    type: 'line',
-                    toolbar: {
-                        show: false
-                    },
-                    dropShadow: {
-                        enabled: true,
-                        top: 10,
-                        left: 5,
-                        blur: 3,
-                        color: config.colors.warning,
-                        opacity: 0.15
-                    },
-                    sparkline: {
-                        enabled: true
-                    }
-                },
-                grid: {
-                    show: false,
-                    padding: {
-                        right: 8
-                    }
-                },
-                colors: [config.colors.warning],
-                dataLabels: {
-                    enabled: false
-                },
-                stroke: {
-                    width: 5,
-                    curve: 'smooth'
-                },
-                series: [{
-                    name: 'Jumlah',
-                    data: {!! json_encode($chartData['series']) !!}
-                }],
-                xaxis: {
-                    categories: {!! json_encode($chartData['labels']) !!},
-                    labels: {
-                        style: {
-                            fontSize: '10px',
-                            colors: '#6B7280'
-                        }
-                    }
-                },
-                yaxis: {
-                    show: false
-                }
-            };
-        if (typeof profileReportChartEl !== undefined && profileReportChartEl !== null) {
-            const profileReportChart = new ApexCharts(profileReportChartEl, profileReportChartConfig);
-            profileReportChart.render();
+            });
         }
-
-
-        
-        -->
+    });
+</script>
+@endsection

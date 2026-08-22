@@ -21,10 +21,8 @@ class RuangansController extends Controller
      */
     public function index(Request $request)
     {
-        $user = Auth::user();
         $keyword = $request->input('search');
         $exportType = $request->input('export');
-        $statusFilter = $request->input('status'); // Ambil filter status dari request
 
         $ruanganQuery = Ruangans::query();
 
@@ -33,18 +31,6 @@ class RuangansController extends Controller
             $ruanganQuery->where(function ($query) use ($keyword) {
                 $query->where('nama_ruangan', 'like', "%$keyword%")
                     ->orWhere('deskripsi', 'like', "%$keyword%");
-            });
-        }
-
-        // Filter status ruangan berdasarkan select option
-        if ($statusFilter) {
-            $ruanganQuery->where('deskripsi', $statusFilter);
-        }
-
-        // Filter berdasarkan status_user jika bukan admin (relasi barang)
-        if ($user->status_user !== 'admin') {
-            $ruanganQuery->whereHas('barangruangan.barang', function ($query) use ($user) {
-                $query->where('status_barang', $user->status_user);
             });
         }
 
@@ -65,7 +51,7 @@ class RuangansController extends Controller
         // Ambil data ruangan dengan pagination
         $ruangan = $ruanganQuery->orderBy('nama_ruangan', 'asc')->paginate(10);
 
-        return view('ruangan.index', compact('ruangan', 'keyword', 'statusFilter'));
+        return view('ruangan.index', compact('ruangan', 'keyword'));
     }
 
     

@@ -56,8 +56,8 @@
                     <div class="card-body">
                         <!-- Logo -->
                         <div class="app-brand justify-content-center mb-4 mt-2">
-                            <img style="width: 260px"
-                            src="{{ asset('admin/assets/img/icons/brands/gudangku-icon.png') }}" alt="">
+                            <img style="width: 220px; max-width: 100%; object-fit: contain;"
+                            src="{{ asset('admin/assets/img/icons/brands/gudangku-.png') }}" alt="INVAS">
                         </div>
                         <!-- /Logo -->
                         <form id="formAuthentication" class="mb-3" method="POST" action="{{ route('login') }}">

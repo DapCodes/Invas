@@ -30,7 +30,6 @@ class KaryawanExport implements FromCollection, WithHeadings, WithStyles, WithCo
                 'No' => $index + 1,
                 'Nama' => $user->name,
                 'Email' => $user->email,
-                'Status Petugas' => "Petugas " . $user->status_user,
                 'Tanggal Daftar' => $user->created_at->format('d-m-Y'),  // Format tanggal
             ];
         });
@@ -43,7 +42,6 @@ class KaryawanExport implements FromCollection, WithHeadings, WithStyles, WithCo
             'No',
             'Nama',
             'Email',
-            'Status Petugas',
             'Tanggal Daftar',
         ];
     }
@@ -54,18 +52,18 @@ class KaryawanExport implements FromCollection, WithHeadings, WithStyles, WithCo
         $highestRow = $sheet->getHighestRow();
 
         // Styling header
-        $sheet->getStyle('A1:E1')->getFont()->setBold(true)->setSize(12)->setColor(new Color('FFFFFF'));
-        $sheet->getStyle('A1:E1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A1:E1')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A1:E1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('2196F3');
+        $sheet->getStyle('A1:D1')->getFont()->setBold(true)->setSize(12)->setColor(new Color('FFFFFF'));
+        $sheet->getStyle('A1:D1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1:D1')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A1:D1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('2196F3');
 
         // Styling untuk data
-        $sheet->getStyle('A2:E' . $highestRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-        $sheet->getStyle('A2:E' . $highestRow)->getFont()->setSize(10);
-        $sheet->getStyle('A1:E' . $highestRow)->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A2:D' . $highestRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $sheet->getStyle('A2:D' . $highestRow)->getFont()->setSize(10);
+        $sheet->getStyle('A1:D' . $highestRow)->getAlignment()->setWrapText(true);
 
         // Auto-size kolom
-        foreach (range('A', 'E') as $col) {
+        foreach (range('A', 'D') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
@@ -76,7 +74,7 @@ class KaryawanExport implements FromCollection, WithHeadings, WithStyles, WithCo
     public function columnFormats(): array
     {
         return [
-            'E' => NumberFormat::FORMAT_DATE_DDMMYYYY, // Format tanggal
+            'D' => NumberFormat::FORMAT_DATE_DDMMYYYY, // Format tanggal
         ];
     }
 }

@@ -57,7 +57,7 @@
 
 <body>
     <div class="header">
-        <img src="{{ public_path('admin/assets/img/icons/brands/gudangku-icon.png') }}" alt="Logo">
+        <img src="{{ public_path('admin/assets/img/icons/brands/gudangku-.png') }}" alt="Logo">
         <h2>Laporan Data Vendor</h2>
     </div>
 

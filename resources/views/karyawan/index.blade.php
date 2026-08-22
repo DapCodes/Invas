@@ -66,7 +66,6 @@
                         <th>#</th>
                         <th>Nama</th>
                         <th>Email</th>
-                        <th>Status User</th>
                         <th>Tanggal Daftar</th>
                         <th class="text-center">Aksi</th>
                     </tr>
@@ -77,7 +76,6 @@
                             <td>{{ $loop->iteration + ($users->firstItem() - 1) }}</td>
                             <td>{{ $item->name }}</td>
                             <td>{{ $item->email }}</td>
-                            <td>{{ 'Petugas ' . $item->status_user }}</td>
                             <td>{{ \Carbon\Carbon::parse($item->created_at)->translatedFormat('l, d F Y') }}</td>
                             <td class="text-center">
                                 <div class="dropdown">

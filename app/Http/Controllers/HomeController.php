@@ -13,7 +13,6 @@ use Carbon\Carbon;
 
 Carbon::setLocale('id');
 
-
 class HomeController extends Controller
 {
     public function __construct()
@@ -23,100 +22,38 @@ class HomeController extends Controller
 
     public function index()
     {
-        $user = auth()->user();
-        $isAdmin = $user->status_user === 'admin';
-
         $satuBulanLalu = Carbon::now()->subDays(7);
 
-        if ($isAdmin) {
-            // Barang yang dibuat dalam 7 hari terakhir
-            $barang = Barangs::where('created_at', '>=', $satuBulanLalu)->count();
-            $barangStok = Barangs::where('created_at', '>=', $satuBulanLalu)->sum('stok');
-        } else {
-            $barang = Barangs::where('status_barang', $user->status_user)
-                ->where('created_at', '>=', $satuBulanLalu)
-                ->count();
-            $barangStok = Barangs::where('status_barang', $user->status_user)
-                ->where('created_at', '>=', $satuBulanLalu)
-                ->sum('stok');
-        }
+        // Barang yang dibuat dalam 7 hari terakhir
+        $barang = Barangs::where('created_at', '>=', $satuBulanLalu)->count();
+        $barangStok = Barangs::where('created_at', '>=', $satuBulanLalu)->sum('stok');
 
         $peminjaman = Peminjamans::where('tanggal_pinjam', '>=', $satuBulanLalu)
-            ->when(!$isAdmin, function ($query) use ($user) {
-                $query->whereHas('ruangan', function ($q) use ($user) {
-                    $q->where('deskripsi', $user->status_user);
-                });
-            })
             ->where('status', 'Sedang Dipinjam')
             ->count();
         
         $peminjamanStok = Peminjamans::where('tanggal_pinjam', '>=', $satuBulanLalu)
-            ->when(!$isAdmin, function ($query) use ($user) {
-                $query->whereHas('ruangan', function ($q) use ($user) {
-                    $q->where('deskripsi', $user->status_user);
-                });
-            })
             ->where('status', 'Sedang Dipinjam')
             ->sum('jumlah');
 
-
         // Pengembalian (dalam 1 bulan terakhir)
-        $pengembalian = Pengembalians::where('tanggal_kembali', '>=', $satuBulanLalu)
-            ->when(!$isAdmin, function ($query) use ($user) {
-                $query->whereHas('ruangan', function ($q) use ($user) {
-                    $q->where('deskripsi', $user->status_user);
-                });
-            })
-            ->count();
-        
-        $pengembalianStok = Pengembalians::where('tanggal_kembali', '>=', $satuBulanLalu)
-            ->when(!$isAdmin, function ($query) use ($user) {
-                $query->whereHas('ruangan', function ($q) use ($user) {
-                    $q->where('deskripsi', $user->status_user);
-                });
-            })
-            ->sum('jumlah');
+        $pengembalian = Pengembalians::where('tanggal_kembali', '>=', $satuBulanLalu)->count();
+        $pengembalianStok = Pengembalians::where('tanggal_kembali', '>=', $satuBulanLalu)->sum('jumlah');
 
         // Ruangan
-        $ruangan = Ruangans::when(!$isAdmin, function ($query) use ($user) {
-            $query->where('deskripsi', $user->status_user);
-        })->count();
+        $ruangan = Ruangans::count();
 
         // Barang Masuk (dalam 1 bulan terakhir)
-        $barangMasuk = BarangMasuks::where('tanggal_masuk', '>=', $satuBulanLalu)
-            ->when(!$isAdmin, function ($query) use ($user) {
-                $query->whereHas('ruangan', function ($q) use ($user) {
-                    $q->where('deskripsi', $user->status_user);
-                });
-            })
-            ->count();
+        $barangMasuk = BarangMasuks::where('tanggal_masuk', '>=', $satuBulanLalu)->count();
 
         // Barang Keluar (dalam 1 bulan terakhir)
-        $barangKeluar = BarangKeluars::where('tanggal_keluar', '>=', $satuBulanLalu)
-            ->when(!$isAdmin, function ($query) use ($user) {
-                $query->whereHas('ruangan', function ($q) use ($user) {
-                    $q->where('deskripsi', $user->status_user);
-                });
-            })
-            ->count();
+        $barangKeluar = BarangKeluars::where('tanggal_keluar', '>=', $satuBulanLalu)->count();
 
         // Total Stok Masuk (dalam 1 bulan terakhir)
-        $totalStokMasuk = BarangMasuks::where('tanggal_masuk', '>=', $satuBulanLalu)
-            ->when(!$isAdmin, function ($query) use ($user) {
-                $query->whereHas('ruangan', function ($q) use ($user) {
-                    $q->where('deskripsi', $user->status_user);
-                });
-            })
-            ->sum('jumlah');
+        $totalStokMasuk = BarangMasuks::where('tanggal_masuk', '>=', $satuBulanLalu)->sum('jumlah');
 
         // Total Stok Keluar (dalam 1 bulan terakhir)
-        $totalStokKeluar = BarangKeluars::where('tanggal_keluar', '>=', $satuBulanLalu)
-            ->when(!$isAdmin, function ($query) use ($user) {
-                $query->whereHas('ruangan', function ($q) use ($user) {
-                    $q->where('deskripsi', $user->status_user);
-                });
-            })
-            ->sum('jumlah');
+        $totalStokKeluar = BarangKeluars::where('tanggal_keluar', '>=', $satuBulanLalu)->sum('jumlah');
 
         $total = $barang + $peminjaman + $pengembalian + $ruangan + $barangMasuk + $barangKeluar;
 
@@ -143,7 +80,4 @@ class HomeController extends Controller
             'totalStokKeluar'
         ));
     }
-
-
-
 }

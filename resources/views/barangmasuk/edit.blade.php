@@ -69,7 +69,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            @error('status_user')
+                            @error('ruangan_id')
                                 <div class="invalid-feedback d-block mt-1 d-flex gap-1" style="margin-left: 15px;">
                                     <i class="bx bx-error-circle"></i>
                                     <p>{{ $message }}</p>

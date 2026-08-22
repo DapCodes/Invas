@@ -84,34 +84,6 @@
                             @enderror
                         </div>
                     </div>
-                    <div class="row mb-3">
-                        <label class="col-sm-2 col-form-label" for="basic-icon-default-fullname">Status Petugas</label>
-                        <div class="col-sm-10">
-                            <div class="input-group input-group-merge">
-                                <select name="status_user" id="status_user"
-                                    class="form-control @error('status_user') is-invalid @enderror">
-                                    <option value="Umum"
-                                        {{ old('status_user', $karyawan->status_user ?? '') == 'Umum' ? 'selected' : '' }}>
-                                        Petugas Umum</option>
-                                    <option value="RPL"
-                                        {{ old('status_user', $karyawan->status_user ?? '') == 'RPL' ? 'selected' : '' }}>
-                                        Petugas RPL</option>
-                                    <option value="TBSM"
-                                        {{ old('status_user', $karyawan->status_user ?? '') == 'TBSM' ? 'selected' : '' }}>
-                                        Petugas TBSM</option>
-                                    <option value="TKRO"
-                                        {{ old('status_user', $karyawan->status_user ?? '') == 'TKRO' ? 'selected' : '' }}>
-                                        Petugas TKRO</option>
-                                </select>
-                            </div>
-                            @error('status_user')
-                                <div class="invalid-feedback d-block mt-1 d-flex gap-1" style="margin-left: 15px;">
-                                    <i class="bx bx-error-circle"></i>
-                                    <p>{{ $message }}</p>
-                                </div>
-                            @enderror
-                        </div>
-                    </div>
                     <div class="row justify-content-end">
                         <div class="col-sm-10">
                             <button type="submit" class="btn btn-primary">Kirim</button>

@@ -109,48 +109,7 @@
                             @enderror
                         </div>
                     </div>
-                    @php
-                        $status = Auth::user()->status_user;
-                    @endphp
-                    @if ($status == 'RPL')
-                        <input type="text" name="status_barang" id="status_barang" value="RPL" hidden>
-                    @endif
-                    @if ($status == 'TBSM')
-                        <input type="text" name="status_barang" id="status_barang" value="TBSM" hidden>
-                    @endif
-                    @if ($status == 'TKRO')
-                        <input type="text" name="status_barang" id="status_barang" value="TKRO" hidden>
-                    @endif
-                    @if ($status == 'admin')
-                        <div class="row mb-3">
-                            <label class="col-sm-2 col-form-label" for="basic-icon-default-fullname">Status Petugas</label>
-                            <div class="col-sm-10">
-                                <div class="input-group input-group-merge">
-                                    <select name="status_barang" id="status_barang"
-                                        class="form-control @error('status_barang') is-invalid @enderror">
-                                        <option value="Umum"
-                                            {{ old('status_barang', $barang->status_barang ?? '') == 'Umum' ? 'selected' : '' }}>
-                                            Barang Umum</option>
-                                        <option value="RPL"
-                                            {{ old('status_barang', $barang->status_barang ?? '') == 'RPL' ? 'selected' : '' }}>
-                                            Barang RPL</option>
-                                        <option value="TBSM"
-                                            {{ old('status_barang', $barang->status_barang ?? '') == 'TBSM' ? 'selected' : '' }}>
-                                            Barang TBSM</option>
-                                        <option value="TKRO"
-                                            {{ old('status_barang', $barang->status_barang ?? '') == 'TKRO' ? 'selected' : '' }}>
-                                            Barang TKRO</option>
-                                    </select>
-                                </div>
-                                @error('status_user')
-                                    <div class="invalid-feedback d-block mt-1 d-flex gap-1" style="margin-left: 15px;">
-                                        <i class="bx bx-error-circle"></i>
-                                        <p>{{ $message }}</p>
-                                    </div>
-                                @enderror
-                            </div>
-                        </div>
-                    @endif
+
                     <div class="row justify-content-end">
                         <div class="col-sm-10">
                             <button type="submit" class="btn btn-primary">Ubah</button>

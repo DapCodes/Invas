@@ -15,7 +15,6 @@ class Barangs extends Model
         'merek',
         'foto',
         'stok',
-        'status_barang',
         'id_user',
         'vendor_id',
         'serial_number',

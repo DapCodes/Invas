@@ -17,54 +17,38 @@ class RuanganTableSeeder extends Seeder
     {
         $ruangan = [];
 
-        $jurusan = [
-            'RPL' => 3,
-            'TBSM' => 2,
-            'TKRO' => 2,
-        ];
-
         // Kelas X sampai XII
         foreach (['X', 'XI', 'XII'] as $kelas) {
-            foreach ($jurusan as $namaJurusan => $jumlahKelas) {
-                for ($i = 1; $i <= $jumlahKelas; $i++) {
-                    $ruangan[] = [
-                        'nama_ruangan' => "$kelas $namaJurusan $i",
-                        'deskripsi' => $namaJurusan,
-                    ];
-                }
+            for ($i = 1; $i <= 3; $i++) {
+                $ruangan[] = [
+                    'nama_ruangan' => "Ruang Kelas $kelas-$i",
+                    'deskripsi' => 'Ruang Kelas',
+                ];
             }
         }
 
-        // Lab RPL 1-3
+        // Laboratorium
         for ($i = 1; $i <= 3; $i++) {
             $ruangan[] = [
-                'nama_ruangan' => "Lab RPL $i",
-                'deskripsi' => 'RPL',
+                'nama_ruangan' => "Laboratorium $i",
+                'deskripsi' => 'Laboratorium Komputer',
             ];
         }
 
-        // Bengkel TBSM 1-2
+        // Bengkel
         for ($i = 1; $i <= 2; $i++) {
             $ruangan[] = [
-                'nama_ruangan' => "Bengkel TBSM $i",
-                'deskripsi' => 'TBSM',
+                'nama_ruangan' => "Bengkel Praktikum $i",
+                'deskripsi' => 'Bengkel Praktikum',
             ];
         }
 
-        // Bengkel TKRO 1-2
-        for ($i = 1; $i <= 2; $i++) {
-            $ruangan[] = [
-                'nama_ruangan' => "Bengkel TKRO $i",
-                'deskripsi' => 'TKRO',
-            ];
-        }
-
-        // Ruang Umum
-        $umum = ['Ruang Guru', 'Ruang BK', 'Perpustakaan', 'UP RPL', 'UP TKRO', 'UP TBSM', 'Mushola', 'Ruangan Osis', 'Lab Informatika', 'BLK', 'Gudang'];
-        foreach ($umum as $nama) {
+        // Ruang Fasilitas Umum
+        $fasilitas = ['Ruang Guru', 'Ruang BK', 'Perpustakaan', 'Unit Produksi', 'Mushola', 'Ruangan Osis', 'BLK', 'Gudang Utama'];
+        foreach ($fasilitas as $nama) {
             $ruangan[] = [
                 'nama_ruangan' => $nama,
-                'deskripsi' => 'Umum',
+                'deskripsi' => 'Fasilitas Umum',
             ];
         }
 

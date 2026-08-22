@@ -15,16 +15,7 @@
                             <div class="card-title mb-0">
                                 <h5 class="m-0 me-2">Total Barang</h5>
                                 <small class="text-muted">
-                                    @if (Auth::user()->is_admin === 1)
-                                        Total kuantitas barang yang ada di <strong>SMK Assalaam</strong>
-                                    @else
-                                        @if (Auth::user()->status_user === 'Umum')
-                                            Total kuantitas barang yang status nya <strong>Umum</strong>
-                                        @else
-                                            Total kuantitas barang di jurusan
-                                            <strong>{{ Auth::user()->status_user }}</strong>
-                                        @endif
-                                    @endif
+                                    Total kuantitas barang yang ada di <strong>SMK Assalaam</strong>
                                 </small>
                             </div>
                             <div class="dropdown">
@@ -59,7 +50,7 @@
                                             class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
                                             <div class="me-2">
                                                 <h6 class="mb-0">{{ $barang->nama }}</h6>
-                                                <small class="text-muted">Status: {{ $barang->status_barang }}</small>
+                                                <small class="text-muted">{{ $barang->merek }}</small>
                                             </div>
                                             <div class="user-progress">
                                                 <small class="fw-semibold">{{ number_format($barang->stok) }} stok</small>

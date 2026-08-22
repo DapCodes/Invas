@@ -360,7 +360,6 @@ Stores master inventory item data.
 - `merek` - Item brand/manufacturer
 - `foto` - Item photo path
 - `stok` - Total item stock
-- `status_barang` - Item status (new, old, damaged, etc.)
 - `id_user` - Foreign Key to Users (Admin who entered the data)
 - `created_at`, `updated_at` - Timestamp
 

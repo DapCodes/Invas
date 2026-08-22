@@ -20,7 +20,6 @@ return new class extends Migration
             $table->string('merek');
             $table->string('foto');
             $table->unsignedBigInteger('stok')->default(0);
-            $table->string('status_barang');
             $table->unsignedBigInteger('id_user');
             $table->timestamps();
             $table->foreign('id_user')->references('id')->on('users')->onDelete('cascade');

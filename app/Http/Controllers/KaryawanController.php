@@ -31,8 +31,7 @@ class KaryawanController extends Controller
             ->when($keyword, function ($query) use ($keyword) {
                 // Menambahkan filter pencarian berdasarkan nama atau email
                 $query->where('name', 'like', "%$keyword%")
-                    ->orWhere('email', 'like', "%$keyword%")
-                    ->orWhere('status_user', 'like', "%$keyword%");
+                    ->orWhere('email', 'like', "%$keyword%");
             });
 
         // Ambil hasil query sesuai filter
@@ -54,9 +53,6 @@ class KaryawanController extends Controller
         // Menampilkan halaman daftar karyawan dengan data yang sudah difilter
         return view('karyawan.index', compact('users', 'keyword'));
     }
-
-    
-
 
     /**
      * Show the form for creating a new resource.
@@ -80,22 +76,18 @@ class KaryawanController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users',
             'password' => 'required|string|min:6',
-            'status_user' => 'required|string|max:4',
         ],
         [
             'name.required' => 'Nama tidak boleh kosong',
             'email.required' => 'Email tidak boleh kosong',
             'password.required' => 'Password tidak boleh kosong',
-            'password.min' => 'Password minimal 8 karakter',
-            'status_user.required' => 'Status Petugas tidak boleh kosong',
-            'status_user.max' => 'Silahkan pilih status (RPL, TBSM, TKRO, Umum)'
+            'password.min' => 'Password minimal 6 karakter',
         ]);
 
         $user = new User();
         $user->name = $request->name;
         $user->email = $request->email;
         $user->password = bcrypt($request->password);
-        $user->status_user = $request->status_user;
         $user->is_admin = 0;
         $user->save();
 
@@ -151,11 +143,6 @@ class KaryawanController extends Controller
              $user->password = Hash::make($request->password);
          }
 
-        // Update status_user jika ada perubahan
-        if ($request->has('status_user')) {
-            $user->status_user = $request->status_user;
-        }
-     
          $user->save();
      
          Alert::success('Berhasil!', 'Data Berhasil Diubah');

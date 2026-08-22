@@ -37,20 +37,7 @@
                     value="{{ request('search') }}">
             </div>
 
-            {{-- Tambahkan filter lainnya di sini jika diperlukan --}}
-            
-            <div class="col-md-6 col-lg-4">
-    <label for="status" class="form-label">Status Ruangan</label>
-    <select name="status" id="status" class="form-select">
-        <option value="">Semua Jurusan</option>
-        <option value="RPL" {{ request('status') == 'RPL' ? 'selected' : '' }}>RPL</option>
-        <option value="TBSM" {{ request('status') == 'TBSM' ? 'selected' : '' }}>TBSM</option>
-        <option value="TKRO" {{ request('status') == 'TKRO' ? 'selected' : '' }}>TKRO</option>
-        <option value="Umum" {{ request('status') == 'Umum' ? 'selected' : '' }}>Umum</option>
-    </select>
-</div>
 
-        
 
             {{-- Tombol Aksi --}}
             <div class="col-md-6 col-lg-4 d-flex gap-2">
@@ -148,14 +135,8 @@
                             <input type="text" class="form-control" id="nama_ruangan" name="nama_ruangan" required>
                         </div>
                         <div class="mb-3">
-                            <label for="deskripsi" class="form-label">Jurusan</label>
-                            <select name="deskripsi" id="" class="form-control">
-                                <option value="Umum">Umum</option>
-                                <option value="TBSM">TBSM</option>
-                                <option value="RPL">RPL</option>
-                                <option value="TKRO">TKRO</option>
-
-                            </select>
+                            <label for="deskripsi" class="form-label">Deskripsi</label>
+                            <input type="text" class="form-control" name="deskripsi" id="deskripsi" placeholder="Deskripsi ruangan...">
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -189,16 +170,9 @@
                                     value="{{ $item->nama_ruangan }}" required>
                             </div>
                             <div class="mb-3">
-                                <label for="deskripsi" class="form-label">Jurusan</label>
-                                <select name="deskripsi" class="form-control">
-                                    <option value="Umum" {{ $item->deskripsi == 'Umum' ? 'selected' : '' }}>Umum
-                                    </option>
-                                    <option value="TBSM" {{ $item->deskripsi == 'TBSM' ? 'selected' : '' }}>TBSM
-                                    </option>
-                                    <option value="RPL" {{ $item->deskripsi == 'RPL' ? 'selected' : '' }}>RPL</option>
-                                    <option value="TKRO" {{ $item->deskripsi == 'TKRO' ? 'selected' : '' }}>TKRO
-                                    </option>
-                                </select>
+                                <label for="deskripsi" class="form-label">Deskripsi</label>
+                                <input type="text" class="form-control" name="deskripsi"
+                                    value="{{ $item->deskripsi }}" placeholder="Deskripsi ruangan...">
                             </div>
                         </div>
                         <div class="modal-footer">
