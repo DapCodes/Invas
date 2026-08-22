@@ -13,45 +13,28 @@ class RuanganTableSeeder extends Seeder
      *
      * @return void
      */
-    public function run()
+    public function run(): void
     {
-        $ruangan = [];
+        $ruangans = [
+            [
+                'nama_ruangan' => 'Kafe Timeline',
+                'deskripsi' => 'Area Kafe Timeline & Workshop Perangkat',
+            ],
+            [
+                'nama_ruangan' => 'Kantor Bukadir & GWK (RV)',
+                'deskripsi' => 'Kantor Utama & Ruang Operasional Teknisi ISP',
+            ],
+            [
+                'nama_ruangan' => 'River Prawn',
+                'deskripsi' => 'Gudang Cabang & Pusat Distribusi Material River Prawn',
+            ],
+        ];
 
-        // Kelas X sampai XII
-        foreach (['X', 'XI', 'XII'] as $kelas) {
-            for ($i = 1; $i <= 3; $i++) {
-                $ruangan[] = [
-                    'nama_ruangan' => "Ruang Kelas $kelas-$i",
-                    'deskripsi' => 'Ruang Kelas',
-                ];
-            }
+        foreach ($ruangans as $ruangan) {
+            Ruangans::firstOrCreate(
+                ['nama_ruangan' => $ruangan['nama_ruangan']],
+                $ruangan
+            );
         }
-
-        // Laboratorium
-        for ($i = 1; $i <= 3; $i++) {
-            $ruangan[] = [
-                'nama_ruangan' => "Laboratorium $i",
-                'deskripsi' => 'Laboratorium Komputer',
-            ];
-        }
-
-        // Bengkel
-        for ($i = 1; $i <= 2; $i++) {
-            $ruangan[] = [
-                'nama_ruangan' => "Bengkel Praktikum $i",
-                'deskripsi' => 'Bengkel Praktikum',
-            ];
-        }
-
-        // Ruang Fasilitas Umum
-        $fasilitas = ['Ruang Guru', 'Ruang BK', 'Perpustakaan', 'Unit Produksi', 'Mushola', 'Ruangan Osis', 'BLK', 'Gudang Utama'];
-        foreach ($fasilitas as $nama) {
-            $ruangan[] = [
-                'nama_ruangan' => $nama,
-                'deskripsi' => 'Fasilitas Umum',
-            ];
-        }
-
-        DB::table('ruangans')->insert($ruangan);
     }
 }

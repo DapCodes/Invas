@@ -9,20 +9,30 @@ class BarangKeluars extends Model
 {
     use HasFactory;
 
+    protected $table = 'barang_keluars';
+
     protected $fillable = [
-        'id',
+        'kode_barang',
+        'id_barang',
+        'inventory_item_id',
         'jumlah',
+        'satuan_id',
         'tanggal_keluar',
         'keterangan',
-        'id_barang',
         'ruangan_id',
         'id_user',
     ];
 
+    protected $casts = [
+        'jumlah' => 'decimal:2',
+        'tanggal_keluar' => 'date',
+    ];
+
     public $timestamps = true;
 
-    public function user() {
-        return $this->belongsTo(User::class,'id_user');
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id_user');
     }
 
     public function ruangan()
@@ -30,8 +40,18 @@ class BarangKeluars extends Model
         return $this->belongsTo(Ruangans::class, 'ruangan_id');
     }
 
+    public function barang()
+    {
+        return $this->belongsTo(Barangs::class, 'id_barang');
+    }
 
-    public function barang() {
-        return $this->belongsTo(Barangs::class,'id_barang');
+    public function inventoryItem()
+    {
+        return $this->belongsTo(InventoryItem::class, 'inventory_item_id');
+    }
+
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class, 'satuan_id');
     }
 }

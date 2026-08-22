@@ -9,21 +9,39 @@ class Barangs extends Model
 {
     use HasFactory;
 
+    protected $table = 'barangs';
+
     protected $fillable = [
         'kode_barang',
         'nama',
         'merek',
+        'deskripsi',
         'foto',
         'stok',
+        'satuan_id',
         'id_user',
         'vendor_id',
         'serial_number',
+        'has_serial_number',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'has_serial_number' => 'boolean',
+        'is_active' => 'boolean',
+        'stok' => 'decimal:2',
     ];
 
     public $timestamps = true;
 
-    public function users() {
-        return $this->belongsTo(User::class,'id_user');
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id_user');
+    }
+
+    public function users()
+    {
+        return $this->belongsTo(User::class, 'id_user');
     }
 
     public function vendor()
@@ -31,34 +49,55 @@ class Barangs extends Model
         return $this->belongsTo(Vendor::class, 'vendor_id');
     }
 
+    public function unit()
+    {
+        return $this->belongsTo(Unit::class, 'satuan_id');
+    }
+
+    public function satuan()
+    {
+        return $this->belongsTo(Unit::class, 'satuan_id');
+    }
+
+    public function inventoryItems()
+    {
+        return $this->hasMany(InventoryItem::class, 'barang_id');
+    }
+
+    public function stockMovements()
+    {
+        return $this->hasMany(StockMovement::class, 'barang_id');
+    }
+
     public function barangmasuk()
     {
-        return $this->hasMany(BarangMasuk::class);
+        return $this->hasMany(BarangMasuks::class, 'id_barang');
     }
+
     public function barangkeluar()
     {
-        return $this->hasMany(BarangKeluar::class);
+        return $this->hasMany(BarangKeluars::class, 'id_barang');
     }
+
     public function peminjaman()
     {
-        return $this->hasMany(Peminjaman::class);
+        return $this->hasMany(Peminjamans::class, 'id_barang');
     }
+
     public function pengembalian()
     {
-        return $this->hasMany(Pengembalian::class);
+        return $this->hasMany(Pengembalians::class, 'id_barang');
     }
+
     public function barangruangan()
     {
-        return $this->hasMany(BarangRuangans::class);
+        return $this->hasMany(BarangRuangans::class, 'barang_id');
     }
 
-    public function user() {
-        return $this->belongsTo(User::class,'id_user');
-    }
-
-    public function deleteImage(){
-        if($this->cover && file_exists(public_path('image/barang' . $this->cover))) {
-            return unlink(public_path('image/barang' . $this->cover));
+    public function deleteImage()
+    {
+        if ($this->foto && file_exists(public_path('image/barang/' . $this->foto))) {
+            return unlink(public_path('image/barang/' . $this->foto));
         }
     }
 }

@@ -1,9 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 
 // Controllers
 use App\Http\Controllers\BarangController;
+use App\Http\Controllers\InventoryItemController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\BarangMasukController;
 use App\Http\Controllers\KaryawanController;
@@ -12,6 +14,7 @@ use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\PengembalianController;
 use App\Http\Controllers\RuangansController;
 use App\Http\Controllers\BarangRuangansController;
+use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\StatistikController;
 
@@ -22,13 +25,7 @@ use App\Http\Middleware\RoleMiddleware;
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
 */
-
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -44,18 +41,27 @@ Route::post('/logout', function () {
 Auth::routes(['register' => false]);
 
 // Role Admin
-Route::prefix('admin')->middleware('auth', RoleMiddleware::class)->group(function() {
+Route::prefix('admin')->middleware(['auth', RoleMiddleware::class])->group(function() {
 
-    // Admin Home route (changed from resource)
+    // Admin Home & Statistik routes
     Route::get('home', [HomeController::class, 'index'])->name('admin.home');
-
-    // Admin Statistik
     Route::get('statistik', [StatistikController::class, 'index'])->name('admin.statistik');
+
+    // Central Audit Ledger & Stock Adjustments & Reports Hub
+    Route::get('stock-movements', [StockMovementController::class, 'index'])->name('stock-movement.index');
+    Route::get('stock-adjustments', [StockMovementController::class, 'adjustmentIndex'])->name('stock-adjustment.index');
+    Route::post('stock-adjustments', [StockMovementController::class, 'storeAdjustment'])->name('stock-adjustment.store');
+    Route::get('reports', [StockMovementController::class, 'reportsHub'])->name('reports.index');
 
     // Barang Routes
     Route::resource('barang', BarangController::class);
     Route::get('barang-export', [BarangController::class, 'export'])->name('barang.export');
     Route::get('admin/barang-export-excel', [BarangController::class, 'exportExcel'])->name('barang.export.excel');
+
+    // Inventory Item (Serial Unit) Routes
+    Route::resource('inventory-item', InventoryItemController::class);
+    Route::post('inventory-item/{id}/transfer', [InventoryItemController::class, 'transfer'])->name('inventory-item.transfer');
+    Route::post('inventory-item/{id}/adjust', [InventoryItemController::class, 'adjust'])->name('inventory-item.adjust');
 
     // Vendor Routes
     Route::get('vendor/export-excel', [VendorController::class, 'exportExcel'])->name('vendor.export.excel');
@@ -82,8 +88,6 @@ Route::prefix('admin')->middleware('auth', RoleMiddleware::class)->group(functio
     Route::resource('peminjaman', PeminjamanController::class);
     Route::get('peminjaman-export', [PeminjamanController::class, 'export'])->name('peminjaman.export');
     Route::get('admin/peminjaman-export-excel', [PeminjamanController::class, 'exportExcel'])->name('peminjaman.export.excel');
-    Route::get('/get-barang-by-ruangan/{ruanganId}', [BarangKeluarController::class, 'getBarangByRuangan']);
-    
 
     // Pengembalian Routes
     Route::resource('pengembalian', PengembalianController::class);
@@ -96,8 +100,9 @@ Route::prefix('admin')->middleware('auth', RoleMiddleware::class)->group(functio
     Route::get('admin/ruangan-export-excel', [RuangansController::class, 'exportExcel'])->name('ruangan.export.excel');
 
     // Barang Ruangan Routes
+    Route::post('brg-ruangan/transfer', [BarangRuangansController::class, 'transfer'])->name('brg-ruangan.transfer');
     Route::resource('brg-ruangan', BarangRuangansController::class);
     Route::get('brg-ruangan-export', [BarangRuangansController::class, 'export'])->name('brg-ruangan.export');
     Route::get('admin/brg-ruangan-export-excel', [BarangRuangansController::class, 'exportExcel'])->name('brg-ruangan.export.excel');
-    
+
 });

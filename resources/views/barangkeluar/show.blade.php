@@ -1,83 +1,118 @@
 @extends('layouts.admin')
-@section('page-title', 'Data Barang Keluar / Lihat')
+@section('page-title', 'Detail Barang Keluar: ' . $barangKeluar->kode_barang)
 
 @section('content')
     @include('sweetalert::alert')
 
-    <div class="row g-4 mb-5">
-        <!-- Gambar dan info singkat produk -->
-        <div class="col-md-6 col-lg-4">
-            <div class="card">
-                <img class="card-img-top mt-5" src="{{ asset('/image/barang/' . $barangKeluar->barang->foto) }}"
-                    alt="Card image cap" />
-                <div class="card-body">
+    <div class="col-xxl">
+        <div class="card mb-4">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="mb-0"><i class="bx bx-export text-danger me-2"></i>Detail Transaksi Pengeluaran Barang</h5>
+                    <small class="text-muted">Kode Transaksi: <strong class="text-danger">{{ $barangKeluar->kode_barang }}</strong></small>
+                </div>
+                <a href="{{ route('brg-keluar.index') }}" class="btn btn-outline-secondary">
+                    <i class="bx bx-arrow-back me-1"></i> Kembali
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    {{-- Detail Card --}}
+                    <div class="col-md-7">
+                        <div class="table-responsive">
+                            <table class="table table-bordered align-middle">
+                                <tbody>
+                                    <tr>
+                                        <th class="bg-light" style="width: 35%;">Kode Transaksi</th>
+                                        <td><span class="badge bg-label-danger fs-6">{{ $barangKeluar->kode_barang }}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light">Master Barang</th>
+                                        <td>
+                                            <a href="{{ route('barang.show', $barangKeluar->id_barang) }}" class="fw-bold text-primary">
+                                                {{ $barangKeluar->barang?->nama }}
+                                            </a>
+                                            <div class="small text-muted">{{ $barangKeluar->barang?->merek }} (Kode: {{ $barangKeluar->barang?->kode_barang }})</div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light">Tipe Inventaris</th>
+                                        <td>
+                                            @if ($barangKeluar->inventoryItem)
+                                                <span class="badge bg-info"><i class="bx bx-barcode me-1"></i> SERIALIZED</span>
+                                            @else
+                                                <span class="badge bg-secondary"><i class="bx bx-cube me-1"></i> NON-SERIAL</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @if ($barangKeluar->inventoryItem)
+                                        <tr>
+                                            <th class="bg-light">Unit Serial Number</th>
+                                            <td>
+                                                <a href="{{ route('inventory-item.show', $barangKeluar->inventoryItem->id) }}" class="fw-bold text-primary">
+                                                    <code>{{ $barangKeluar->inventoryItem->serial_number }}</code>
+                                                </a>
+                                                <div class="small text-muted">Sisa Stok Unit Saat Ini: {{ number_format((float)$barangKeluar->inventoryItem->current_quantity, 2) }} {{ $barangKeluar->barang?->unit?->symbol }}</div>
+                                            </td>
+                                        </tr>
+                                    @endif
+                                    <tr>
+                                        <th class="bg-light">Jumlah Keluar</th>
+                                        <td>
+                                            <span class="fw-bold fs-5 text-danger">
+                                                -{{ number_format((float)$barangKeluar->jumlah, $barangKeluar->barang?->unit?->is_decimal ? 2 : 0, ',', '.') }}
+                                            </span>
+                                            <span class="badge bg-label-dark ms-1">{{ $barangKeluar->barang?->unit?->symbol ?? 'pcs' }}</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light">Lokasi / Ruangan Asal</th>
+                                        <td>
+                                            @if ($barangKeluar->ruangan)
+                                                <i class="bx bx-map-pin text-primary me-1"></i>
+                                                <strong>{{ $barangKeluar->ruangan->nama_ruangan }}</strong>
+                                            @else
+                                                <span class="text-muted">Gudang Utama (Tanpa Ruangan)</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light">Tanggal Keluar</th>
+                                        <td>{{ $barangKeluar->tanggal_keluar?->translatedFormat('l, d F Y') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light">Petugas Pengeluar</th>
+                                        <td>{{ $barangKeluar->user?->name ?? 'Sistem' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light">Keterangan / Alasan</th>
+                                        <td><strong class="text-dark">{{ $barangKeluar->keterangan ?? '-' }}</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
+                    {{-- Summary Card & Image --}}
+                    <div class="col-md-5">
+                        <div class="card bg-light border p-3 text-center">
+                            @if ($barangKeluar->barang?->foto)
+                                <img src="{{ asset('image/barang/' . $barangKeluar->barang->foto) }}" alt="{{ $barangKeluar->barang->nama }}"
+                                    class="rounded shadow-sm mx-auto mb-3" style="max-height: 180px; object-fit: cover;">
+                            @else
+                                <div class="avatar avatar-xl bg-label-danger mx-auto my-3 rounded d-flex align-items-center justify-content-center">
+                                    <i class="bx bx-package fs-1"></i>
+                                </div>
+                            @endif
+                            <h6 class="fw-bold mb-1">{{ $barangKeluar->barang?->nama }}</h6>
+                            <p class="text-muted small mb-2">{{ $barangKeluar->barang?->merek }}</p>
+                            <a href="{{ route('barang.show', $barangKeluar->id_barang) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bx bx-show me-1"></i> Buka Master Barang
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- Detail dan aksi pembelian -->
-        <div class="col-md-12 col-lg-8">
-
-            <div class="card mb-4">
-                <div class="card-header d-flex align-items-center justify-content-between">
-                    <div>
-                        <h5 class="card-title">{{ $barangKeluar->barang->nama . ' - ' . $barangKeluar->barang->merek }}</h5>
-                        <div class="card-subtitle text-muted">
-                            {{ $barangKeluar->barang->kode_barang }} <br>
-                            {{ $barangKeluar->kode_barang }}
-                        </div>
-                    </div>
-                    <div class="mb-4">
-                        <a href="{{ route('brg-keluar.index') }}">
-                            <button class="btn btn-outline-secondary">
-                                Kembali
-                            </button>
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row g-3 mb-3">
-                <div class="col-md-6 col-lg-4">
-                    <div class="card">
-                        <div class="card-body">
-                            <span class="fw-semibold d-block mb-1">
-                                <i class="bx bx-download" style="position: relative; bottom: 2px;"></i>
-                                Jumlah Barang Keluar
-                            </span>
-                            <h2 class="card-title mb-0 text-primary">{{ $barangKeluar->jumlah }}</h3>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-8">
-                    <div class="card">
-                        <div class="card-body">
-                            <span class="fw-semibold d-block mb-1">
-                                <i class="bx bx-calendar" style="position: relative; bottom: 2px;"></i>
-                                Tanggal Keluar
-                            </span>
-                            <h3 class="card-title text-primary mb-3 mt-3">
-                                {{ \Carbon\Carbon::parse($barangKeluar->tanggal_masuk)->translatedFormat('l, d F Y') }}</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6 col-lg-8">
-                    <div class="card">
-                        <div class="card-body mb-3">
-                            <span class="fw-semibold d-block mb-1">
-                                <i class="bx bx-package" style="position: relative; bottom: 2px;"></i>
-                                Kondisi Barang / Keterangan
-                            </span>
-                            <h6 class="card-title text-muted mb-1 mt-3">{{ $barangKeluar->keterangan }}</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
-
-    @endsection
+    </div>
+@endsection

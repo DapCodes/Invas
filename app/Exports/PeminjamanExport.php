@@ -7,7 +7,6 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Font;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Color;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
@@ -26,13 +25,15 @@ class PeminjamanExport implements FromCollection, WithHeadings, WithStyles, With
         return $this->peminjamans->map(function ($item, $index) {
             return [
                 'No' => $index + 1,
-                'Kode Barang' => $item->kode_barang,
-                'Nama Barang' => optional($item->barang)->nama . ' - ' . optional($item->barang)->merek,
-                'Kode Barang (Barang)' => optional($item->barang)->kode_barang,
-                'Jumlah' => $item->jumlah,
-                'Tanggal Pinjam' => \Carbon\Carbon::parse($item->tanggal_pinjam)->format('d-m-Y'),
-                'Tanggal Kembali' => \Carbon\Carbon::parse($item->tanggal_kembali)->format('d-m-Y'),
+                'Kode Transaksi' => $item->kode_barang,
                 'Nama Peminjam' => $item->nama_peminjam,
+                'Nama Barang' => optional($item->barang)->nama,
+                'Merek' => optional($item->barang)->merek,
+                'Nomor Seri' => optional($item->inventoryItem)->serial_number ?? '-',
+                'Jumlah' => (float) $item->jumlah,
+                'Satuan' => optional(optional($item->barang)->unit)->symbol ?? 'pcs',
+                'Tanggal Pinjam' => \Carbon\Carbon::parse($item->tanggal_pinjam)->format('d-m-Y'),
+                'Batas Kembali' => \Carbon\Carbon::parse($item->tanggal_kembali)->format('d-m-Y'),
                 'Status' => $item->status,
             ];
         });
@@ -42,13 +43,15 @@ class PeminjamanExport implements FromCollection, WithHeadings, WithStyles, With
     {
         return [
             'No',
-            'Kode Barang',
-            'Nama Barang',
-            'Kode Barang (Barang)',
-            'Jumlah',
-            'Tanggal Pinjam',
-            'Tanggal Kembali',
+            'Kode Transaksi',
             'Nama Peminjam',
+            'Nama Barang',
+            'Merek',
+            'Nomor Seri',
+            'Jumlah',
+            'Satuan',
+            'Tanggal Pinjam',
+            'Batas Kembali',
             'Status',
         ];
     }
@@ -57,13 +60,13 @@ class PeminjamanExport implements FromCollection, WithHeadings, WithStyles, With
     {
         $highestRow = $sheet->getHighestRow();
 
-        $sheet->getStyle('A1:I1')->getFont()->setBold(true)->setSize(12)->setColor(new Color('FFFFFF'));
-        $sheet->getStyle('A1:I1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A1:I1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('4CAF50');
-        $sheet->getStyle('A2:I' . $highestRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-        $sheet->getStyle('A1:I' . $highestRow)->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:K1')->getFont()->setBold(true)->setSize(11)->setColor(new Color('FFFFFF'));
+        $sheet->getStyle('A1:K1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1:K1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FF9800');
+        $sheet->getStyle('A2:K' . $highestRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $sheet->getStyle('A1:K' . $highestRow)->getAlignment()->setWrapText(true);
 
-        foreach (range('A', 'I') as $col) {
+        foreach (range('A', 'K') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
@@ -73,8 +76,7 @@ class PeminjamanExport implements FromCollection, WithHeadings, WithStyles, With
     public function columnFormats(): array
     {
         return [
-            'F' => NumberFormat::FORMAT_DATE_DDMMYYYY,
-            'G' => NumberFormat::FORMAT_DATE_DDMMYYYY,
+            'G' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1,
         ];
     }
 }

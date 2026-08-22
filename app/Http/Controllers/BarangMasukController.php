@@ -1,29 +1,48 @@
 <?php
 
 namespace App\Http\Controllers;
-use Illuminate\Support\Facades\Auth;
 
-use Illuminate\Http\Request;
+use App\Exports\BarangMasukExport;
+use App\Http\Requests\StoreBarangMasukRequest;
 use App\Models\Barangs;
 use App\Models\BarangMasuks;
-use App\Models\Ruangans;
 use App\Models\BarangRuangans;
-use RealRashid\SweetAlert\Facades\Alert;
-use App\Exports\BarangMasukExport;
-use App\Exports\BarangExport;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Models\InventoryItem;
+use App\Models\Ruangans;
+use App\Services\InventoryService;
+use App\Services\StockInService;
+use App\Services\StockMovementService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use RealRashid\SweetAlert\Facades\Alert;
 
-\Carbon\Carbon::setLocale('id');
+Carbon::setLocale('id');
 
 class BarangMasukController extends Controller
 {
-     // cek auth
-    public function __construct()
-    {
+    protected StockInService $stockInService;
+    protected InventoryService $inventoryService;
+    protected StockMovementService $movementService;
+
+    public function __construct(
+        StockInService $stockInService,
+        InventoryService $inventoryService,
+        StockMovementService $movementService
+    ) {
         $this->middleware('auth');
+        $this->stockInService = $stockInService;
+        $this->inventoryService = $inventoryService;
+        $this->movementService = $movementService;
     }
 
+    /**
+     * Display listing of incoming stock transactions
+     */
     public function index(Request $request)
     {
         $keyword = $request->input('search');
@@ -31,19 +50,25 @@ class BarangMasukController extends Controller
         $endDate = $request->input('end_date');
         $exportType = $request->input('export');
 
-        $query = BarangMasuks::with(['barang', 'ruangan', 'user'])
+        $query = BarangMasuks::with(['barang.unit', 'inventoryItem', 'ruangan', 'user'])
             ->when($keyword, function ($query) use ($keyword) {
                 $query->where(function ($subQuery) use ($keyword) {
-                    $subQuery->whereHas('barang', function ($q) use ($keyword) {
-                        $q->where('nama', 'like', "%$keyword%")
-                        ->orWhere('merek', 'like', "%$keyword%");
-                    })
-                    ->orWhereHas('ruangan', function ($q) use ($keyword) {
-                        $q->where('nama_ruangan', 'like', "%$keyword%");
-                    })
-                    ->orWhereHas('user', function ($q) use ($keyword) {
-                        $q->where('name', 'like', "%$keyword%");
-                    });
+                    $subQuery->where('kode_barang', 'like', "%{$keyword}%")
+                        ->orWhere('keterangan', 'like', "%{$keyword}%")
+                        ->orWhereHas('barang', function ($q) use ($keyword) {
+                            $q->where('nama', 'like', "%{$keyword}%")
+                              ->orWhere('merek', 'like', "%{$keyword}%")
+                              ->orWhere('kode_barang', 'like', "%{$keyword}%");
+                        })
+                        ->orWhereHas('inventoryItem', function ($q) use ($keyword) {
+                            $q->where('serial_number', 'like', "%{$keyword}%");
+                        })
+                        ->orWhereHas('ruangan', function ($q) use ($keyword) {
+                            $q->where('nama_ruangan', 'like', "%{$keyword}%");
+                        })
+                        ->orWhereHas('user', function ($q) use ($keyword) {
+                            $q->where('name', 'like', "%{$keyword}%");
+                        });
                 });
             })
             ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
@@ -56,277 +81,180 @@ class BarangMasukController extends Controller
                 $query->whereDate('tanggal_masuk', '<=', $endDate);
             });
 
-        // 🔄 Export jika diminta
-        $barangMasukForExport = $query->get();
+        // Ekspor jika diminta
+        if ($exportType) {
+            $barangMasukForExport = $query->orderBy('id', 'desc')->get();
 
-        if ($exportType === 'excel') {
-            return Excel::download(new BarangMasukExport($barangMasukForExport), 'laporan-data-barangMasuk.xlsx');
+            if ($exportType === 'excel') {
+                return Excel::download(new BarangMasukExport($barangMasukForExport), 'laporan-data-barangMasuk.xlsx');
+            }
+
+            if ($exportType === 'pdf') {
+                $pdf = Pdf::loadView('pdf.barangMasuk', ['barangMasuk' => $barangMasukForExport]);
+                return $pdf->download('laporan-data-barangMasuk.pdf');
+            }
         }
 
-        if ($exportType === 'pdf') {
-            $pdf = Pdf::loadView('pdf.barangMasuk', ['barangMasuk' => $barangMasukForExport]);
-            return $pdf->download('laporan-data-barangMasuk.pdf');
-        }
-
-        // 📄 Paginate jika bukan export
         $barangMasuk = $query->orderBy('id', 'desc')->paginate(10)->withQueryString();
 
         return view('barangmasuk.index', compact('barangMasuk', 'keyword', 'startDate', 'endDate'));
     }
 
-
-    
-
     /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
+     * Show form for creating incoming stock
      */
     public function create()
     {
-        $barang = Barangs::all();
-        $ruangan = Ruangans::all();
+        $barang = Barangs::with(['unit', 'inventoryItems' => function ($q) {
+            $q->whereNotIn('status', ['lost', 'damaged']);
+        }])->where('is_active', true)->orderBy('nama', 'asc')->get();
+
+        $ruangan = Ruangans::orderBy('nama_ruangan', 'asc')->get();
 
         return view('barangmasuk.create', compact('barang', 'ruangan'));
     }
 
     /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * Store incoming stock
      */
-    public function store(Request $request)
+    public function store(StoreBarangMasukRequest $request)
     {
-        $request->validate([
-            'id_barang' => 'required',
-            'jumlah' => 'required|integer|min:1',
-            'tanggal_masuk' => 'required|date',
-            'keterangan' => 'required|string|max:255',
-            'ruangan_id' => 'integer',
-        ],
-        [
-            'id_barang.required' => 'Barang harus dipilih',
-            'jumlah.required' => 'Jumlah barang harus diisi',
-            'jumlah.integer' => 'Jumlah barang harus berupa angka',
-            'jumlah.min' => 'Jumlah barang minimal 1',
-            'tanggal_masuk.required' => 'Tanggal masuk harus diisi',
-            'tanggal_masuk.date' => 'Format tanggal tidak valid',
-            'keterangan.required' => 'Keterangan harus diisi',
-            'keterangan.string' => 'Keterangan harus berupa teks',
-            'keterangan.max' => 'Keterangan maksimal 255 karakter',
-            'ruangan_id.int' => 'Pilih Ruangan dengan Benar',
-        ]);
+        try {
+            $barang = Barangs::findOrFail($request->id_barang);
 
-        
+            if ($barang->has_serial_number) {
+                // Serialized incoming stock (supports multiple serial rows + existing serial top-up)
+                $serialRows = $request->input('serials', []);
+                $meta = [
+                    'tanggal_masuk' => $request->tanggal_masuk,
+                    'keterangan' => $request->keterangan,
+                    'ruangan_id' => $request->ruangan_id,
+                ];
 
-        $barangMasuk = new BarangMasuks;
+                $this->stockInService->processSerialized($barang->id, $serialRows, $meta, Auth::id());
 
-        if ($request->deskripsi) {
-            $barangRuangan = new BarangRuangans;
-
-            $cek = BarangRuangans::where('barang_id', $request->id_barang)
-            ->where('ruangan_id', $request->deskripsi)
-            ->first();
-
-            if ($cek) {
-                $cek->stok += $request->jumlah;
-                $cek->save();
+                Alert::success('Berhasil!', 'Penerimaan barang serial (' . count($serialRows) . ' unit) berhasil dicatat.');
             } else {
-                $barangRuangan->barang_id = $request->id_barang;
-                $barangRuangan->ruangan_id = $request->deskripsi;
-                $barangRuangan->stok = $request->jumlah;
-                $barangRuangan->save();
+                // Non-serialized incoming stock
+                $this->stockInService->processNonSerialized([
+                    'barang_id' => $barang->id,
+                    'jumlah' => $request->jumlah,
+                    'ruangan_id' => $request->ruangan_id,
+                    'tanggal_masuk' => $request->tanggal_masuk,
+                    'keterangan' => $request->keterangan,
+                    'satuan_id' => $barang->satuan_id,
+                ], Auth::id());
+
+                Alert::success('Berhasil!', 'Penerimaan barang non-serial berhasil dicatat.');
             }
 
+            return redirect()->route('brg-masuk.index');
+        } catch (Exception $e) {
+            Alert::error('Gagal!', 'Terjadi kesalahan: ' . $e->getMessage());
+            return back()->withInput();
         }
-
-        $lastRecord = BarangMasuks::latest('id')->first();
-        $lastId = $lastRecord ? $lastRecord->id : 0;
-        $kodeBarang = 'BM-' . str_pad($lastId + 1, 4, '0', STR_PAD_LEFT);
-
-        $barangMasuk->kode_barang = $kodeBarang;
-
-        $barangMasuk->id_barang = $request->id_barang;
-        $barangMasuk->jumlah = $request->jumlah;
-        $barangMasuk->tanggal_masuk = $request->tanggal_masuk;
-        $barangMasuk->keterangan = $request->keterangan;
-        $barangMasuk->ruangan_id = $request->deskripsi;
-
-        $userId = Auth::user();
-        $barangMasuk->id_user = $userId->id;
-
-        $barang = Barangs::findOrFail($request->id_barang);
-        $barang->stok += $request->jumlah;
-        $barang->save();
-
-        $barangMasuk->save();
-        Alert::success('Berhasil!', 'Data Berhasil Ditambahkan');
-        return redirect()->route('brg-masuk.index');
     }
 
     /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * Display detailed transaction
      */
     public function show($id)
     {
-        $barangMasuk = BarangMasuks::findOrFail($id);
+        $barangMasuk = BarangMasuks::with(['barang.unit', 'inventoryItem', 'ruangan', 'user'])->findOrFail($id);
         return view('barangmasuk.show', compact('barangMasuk'));
     }
 
     /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        $barangMasuk = BarangMasuks::findOrFail($id);
-        $barang = Barangs::all();
-        $ruangan = Ruangans::all();
-
-        // Cari barangRuangan berdasarkan barang_id yang ada di $barangMasuk
-        $barangRuangan = BarangRuangans::where('barang_id', $barangMasuk->id_barang)->first();
-
-        return view('barangmasuk.edit', compact('barangMasuk', 'barang', 'ruangan', 'barangRuangan'));
-    }
-
-
-
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-
-     public function update(Request $request, $id)
-     {
-         $request->validate([
-             'id_barang' => 'required',
-             'jumlah' => 'required|integer|min:1',
-             'tanggal_masuk' => 'required|date',
-             'keterangan' => 'required|string|max:255',
-             'ruangan_id' => 'required|exists:ruangans,id',
-         ], [
-             'id_barang.required' => 'Barang harus dipilih',
-             'jumlah.required' => 'Jumlah barang harus diisi',
-             'jumlah.integer' => 'Jumlah barang harus berupa angka',
-             'jumlah.min' => 'Jumlah barang minimal 1',
-             'tanggal_masuk.required' => 'Tanggal masuk harus diisi',
-             'tanggal_masuk.date' => 'Format tanggal tidak valid',
-             'keterangan.required' => 'Keterangan tidak boleh kosong',
-             'keterangan.string' => 'Keterangan harus berupa teks',
-             'keterangan.max' => 'Keterangan maksimal 255 karakter',
-             'ruangan_id.required' => 'Ruangan harus dipilih',
-             'ruangan_id.exists' => 'Ruangan tidak valid',
-         ]);
-     
-         $barangMasuk = BarangMasuks::findOrFail($id);
-     
-         // Kurangi stok dari barang lama
-         $barangLama = Barangs::findOrFail($barangMasuk->id_barang);
-         if ($barangLama->stok < $barangMasuk->jumlah) {
-             Alert::error('Gagal!', 'Stok barang kurang, data tidak bisa diubah.');
-             return redirect()->route('brg-masuk.index');
-         }
-         $barangLama->stok -= $barangMasuk->jumlah;
-         $barangLama->save();
-     
-         // Tambahkan stok ke barang baru
-         $barangBaru = Barangs::findOrFail($request->id_barang);
-         $barangBaru->stok += $request->jumlah;
-         $barangBaru->save();
-     
-         // Kurangi stok lama dari barang_ruangans
-         $oldBarangRuangan = BarangRuangans::where('barang_id', $barangMasuk->id_barang)
-             ->where('ruangan_id', $barangMasuk->ruangan_id)
-             ->first();
-     
-         if ($oldBarangRuangan) {
-             $oldBarangRuangan->stok -= $barangMasuk->jumlah;
-             if ($oldBarangRuangan->stok <= 0) {
-                 $oldBarangRuangan->delete();
-             } else {
-                 $oldBarangRuangan->save();
-             }
-         }
-     
-         // Tambahkan stok ke barang_ruangans baru
-         $newBarangRuangan = BarangRuangans::firstOrNew([
-             'barang_id' => $request->id_barang,
-             'ruangan_id' => $request->ruangan_id,
-         ]);
-     
-         if (!$newBarangRuangan->exists) {
-             $newBarangRuangan->stok = 0;
-         }
-     
-         $newBarangRuangan->stok += $request->jumlah;
-         $newBarangRuangan->save();
-     
-         // Update data barang masuk
-         $barangMasuk->id_barang = $request->id_barang;
-         $barangMasuk->jumlah = $request->jumlah;
-         $barangMasuk->tanggal_masuk = $request->tanggal_masuk;
-         $barangMasuk->keterangan = $request->keterangan;
-         $barangMasuk->ruangan_id = $request->ruangan_id;
-         $barangMasuk->id_user = $barangMasuk->id_user;        
-         $barangMasuk->save();
-     
-         Alert::success('Berhasil!', 'Data berhasil diperbarui.');
-         return redirect()->route('brg-masuk.index');
-     }
-     
-     
-
-
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * Remove / void incoming stock transaction safely
      */
     public function destroy($id)
     {
-        $barangMasuk = BarangMasuks::findOrFail($id);
-        $barangLama = Barangs::findOrFail($barangMasuk->id_barang);
+        try {
+            DB::beginTransaction();
 
-        // Update stok utama di tabel barangs
-        $barangLama->stok = max(0, $barangLama->stok - $barangMasuk->jumlah);
-        $barangLama->save();
+            $barangMasuk = BarangMasuks::lockForUpdate()->findOrFail($id);
+            $barang = Barangs::lockForUpdate()->findOrFail($barangMasuk->id_barang);
+            $qtyToRevert = (float) $barangMasuk->jumlah;
 
-        // Update stok di barang_ruangans (berdasarkan barang_id dan ruangan_id)
-        $barangRuangan = BarangRuangans::where('barang_id', $barangMasuk->id_barang)
+            if ($barangMasuk->inventory_item_id) {
+                $item = InventoryItem::lockForUpdate()->find($barangMasuk->inventory_item_id);
+                if ($item) {
+                    if ($item->status === 'borrowed') {
+                        throw new Exception('Unit serial terkait transaksi ini sedang dipinjam.');
+                    }
+                    $itemQtyBefore = (float) $item->current_quantity;
+                    if ($itemQtyBefore < $qtyToRevert) {
+                        throw new Exception('Sisa kuantitas pada unit serial tidak mencukupi untuk pembatalan transaksi.');
+                    }
+
+                    $itemQtyAfter = $itemQtyBefore - $qtyToRevert;
+                    $item->current_quantity = $itemQtyAfter;
+                    if ($itemQtyAfter <= 0) {
+                        $item->status = 'depleted';
+                    }
+                    $item->save();
+
+                    // Movement reversal
+                    $this->movementService->record(
+                        $barang->id,
+                        $item->id,
+                        'adjustment',
+                        -$qtyToRevert,
+                        $itemQtyBefore,
+                        $itemQtyAfter,
+                        'barang_masuk_void',
+                        $barangMasuk->id,
+                        $barangMasuk->ruangan_id,
+                        Auth::id(),
+                        "Pembatalan Barang Masuk #{$barangMasuk->kode_barang}"
+                    );
+                }
+            } else {
+                if ((float) $barang->stok < $qtyToRevert) {
+                    throw new Exception('Stok barang saat ini kurang dari jumlah yang ingin dibatalkan.');
+                }
+
+                $qtyBefore = (float) $barang->stok;
+                $qtyAfter = $qtyBefore - $qtyToRevert;
+                $barang->stok = $qtyAfter;
+                $barang->save();
+
+                if ($barangMasuk->ruangan_id) {
+                    $room = BarangRuangans::lockForUpdate()->where('barang_id', $barang->id)
                         ->where('ruangan_id', $barangMasuk->ruangan_id)
                         ->first();
+                    if ($room) {
+                        $room->stok = max(0, (float) $room->stok - $qtyToRevert);
+                        $room->save();
+                    }
+                }
 
-        if ($barangRuangan) {
-            if ($barangRuangan->stok <= $barangMasuk->jumlah) {
-                // Hapus entri jika stok akan jadi 0 atau kurang
-                $barangRuangan->delete();
-            } else {
-                // Kurangi stok
-                $barangRuangan->stok -= $barangMasuk->jumlah;
-                $barangRuangan->save();
+                $this->movementService->record(
+                    $barang->id,
+                    null,
+                    'adjustment',
+                    -$qtyToRevert,
+                    $qtyBefore,
+                    $qtyAfter,
+                    'barang_masuk_void',
+                    $barangMasuk->id,
+                    $barangMasuk->ruangan_id,
+                    Auth::id(),
+                    "Pembatalan Barang Masuk #{$barangMasuk->kode_barang}"
+                );
             }
+
+            $barangMasuk->delete();
+            $this->inventoryService->syncMasterStock($barang->id);
+
+            DB::commit();
+
+            Alert::success('Berhasil!', 'Data barang masuk berhasil dibatalkan dan stok disesuaikan.');
+            return redirect()->route('brg-masuk.index');
+        } catch (Exception $e) {
+            DB::rollBack();
+            Alert::error('Gagal!', $e->getMessage());
+            return redirect()->route('brg-masuk.index');
         }
-
-        // Hapus file gambar jika ada
-        $barangMasuk->deleteImage();
-
-        // Hapus data barang masuk
-        $barangMasuk->delete();
-
-        Alert::success('Success', 'Data berhasil dihapus')->autoClose(1500);
-        return redirect()->route('brg-masuk.index');
     }
-
 }

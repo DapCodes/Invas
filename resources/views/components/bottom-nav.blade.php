@@ -1,4 +1,4 @@
-{{-- Mobile Bottom Navigation (Tepat 3 Menu) --}}
+{{-- Mobile Bottom Navigation (5 Action Slots: Pinjam, Kembali, Home, Laporan, Menu) --}}
 <nav class="mobile-bottom-nav d-lg-none" id="mobileBottomNav" aria-label="Mobile Navigation">
     <div class="mobile-bottom-nav-container">
         {{-- 1. Pinjam Barang --}}
@@ -9,7 +9,15 @@
             <span>Pinjam</span>
         </a>
 
-        {{-- 2. Home (Center Primary) --}}
+        {{-- 2. Pengembalian --}}
+        <a href="{{ route('pengembalian.index') }}" 
+           class="mobile-nav-item {{ Request::is('admin/pengembalian*') ? 'active' : '' }}" 
+           title="Pengembalian">
+            <i class="bx bx-undo"></i>
+            <span>Kembali</span>
+        </a>
+
+        {{-- 3. Home (Center Elevated) --}}
         <a href="{{ route('admin.home') }}" 
            class="mobile-nav-item mobile-nav-home {{ Request::is('admin/home*') ? 'active' : '' }}" 
            title="Beranda Utama">
@@ -19,7 +27,15 @@
             <span>Home</span>
         </a>
 
-        {{-- 3. Menu (Draggable Bottom Sheet Trigger) --}}
+        {{-- 4. Pusat Laporan --}}
+        <a href="{{ route('reports.index') }}" 
+           class="mobile-nav-item {{ Request::is('admin/reports*') ? 'active' : '' }}" 
+           title="Pusat Laporan">
+            <i class="bx bx-file-blank"></i>
+            <span>Laporan</span>
+        </a>
+
+        {{-- 5. Semua Menu (Draggable Bottom Sheet Trigger) --}}
         <button type="button" 
                 class="mobile-nav-item" 
                 id="btnOpenMobileMenu" 

@@ -1,98 +1,52 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>Laporan Pengembalian</title>
+    <title>Laporan Data Pengembalian</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            margin: 40px;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #000;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
-        .header img {
-            width: 120px;
-        }
-
-        .header h2 {
-            flex-grow: 1;
-            text-align: center;
-            margin: 0;
-            font-size: 18px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th,
-        td {
-            border: 1px solid #000;
-            padding: 6px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f2f2f2;
-        }
-
-        .footer {
-            margin-top: 50px;
-            text-align: right;
-            font-size: 12px;
-        }
+        body { font-family: Arial, sans-serif; font-size: 11px; margin: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #333; padding: 5px 6px; text-align: left; }
+        th { background-color: #f2f2f2; font-weight: bold; }
+        .footer { margin-top: 30px; text-align: right; font-size: 11px; }
     </style>
 </head>
-
 <body>
     <div class="header">
-        <img src="{{ public_path('admin/assets/img/icons/brands/gudangku-.png') }}" alt="Logo">
-        <h2>Laporan Data Pengembalian</h2>
+        <h2>Laporan Data Pengembalian Barang</h2>
     </div>
-
     <table>
         <thead>
             <tr>
-            <tr>
-                <th>No</th>
-                <th>Kode Pengembalian</th>
-                <th>Nama Barang</th>
-                <th>Kode Barang</th>
+                <th style="width: 25px;">No</th>
+                <th>Kode Kembali</th>
+                <th>Peminjam</th>
+                <th>Nama Barang & Merek</th>
+                <th>Serial Number</th>
                 <th>Jumlah</th>
+                <th>Kondisi</th>
                 <th>Tanggal Kembali</th>
-                <th>Nama Peminjam</th>
-                <th>Status</th>
+                <th>Keterangan</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($pengembalian as $i => $item)
+            @foreach ($pengembalian as $item)
                 <tr>
                     <td>{{ $loop->iteration }}</td>
-                    <td>{{ $item->kode_barang }}</td>
-                    <td>{{ $item->barang->nama . ' - ' . $item->barang->merek }}</td>
-                    <td>{{ $item->barang->kode_barang }}</td>
-                    <td>{{ $item->jumlah }}</td>
-                    <td>{{ \Carbon\Carbon::parse($item->tanggal_kembali)->translatedFormat('l, d F Y') }}</td>
+                    <td><strong>{{ $item->kode_barang }}</strong></td>
                     <td>{{ $item->nama_peminjam }}</td>
-                    <td>{{ $item->status }}</td>
+                    <td>{{ $item->barang?->nama }} ({{ $item->barang?->merek }})</td>
+                    <td>{{ $item->inventoryItem?->serial_number ?? '-' }}</td>
+                    <td>{{ number_format((float)$item->jumlah, $item->barang?->unit?->is_decimal ? 2 : 0) }} {{ $item->barang?->unit?->symbol ?? 'pcs' }}</td>
+                    <td>{{ $item->kondisi }}</td>
+                    <td>{{ \Carbon\Carbon::parse($item->tanggal_kembali)->translatedFormat('d M Y') }}</td>
+                    <td>{{ $item->keterangan }}</td>
                 </tr>
             @endforeach
         </tbody>
     </table>
     <div class="footer">
-        Dicetak pada: {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y') }}
+        Dicetak pada: {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y H:i') }} WIB
     </div>
 </body>
-
 </html>

@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('page-title', 'Data Peminjaman / Tambah')
+@section('page-title', 'Form Peminjaman Barang')
 
 @section('content')
     @include('sweetalert::alert')
@@ -7,130 +7,130 @@
     <div class="col-xxl">
         <div class="card mb-4">
             <div class="card-header d-flex align-items-center justify-content-between">
-                <h5 class="mb-0">Tambah data peminjaman</h5>
-                <a href="{{ route('peminjaman.index') }}">
-                    <button class="btn btn-outline-secondary">
-                        Kembali
-                    </button>
+                <h5 class="mb-0"><i class="bx bx-calendar-event text-warning me-2"></i>Tambah Transaksi Peminjaman</h5>
+                <a href="{{ route('peminjaman.index') }}" class="btn btn-outline-secondary">
+                    <i class="bx bx-arrow-back me-1"></i> Kembali
                 </a>
             </div>
             <div class="card-body">
-                <form action="{{ route('peminjaman.store') }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('peminjaman.store') }}" method="POST" id="formPeminjaman">
                     @csrf
 
-                    {{-- Pilih Ruangan --}}
+                    {{-- 1. PILIH BARANG --}}
                     <div class="row mb-3">
-                        <label class="col-sm-2 col-form-label">Pilih Ruangan</label>
+                        <label class="col-sm-2 col-form-label" for="id_barang">Pilih Barang <span class="text-danger">*</span></label>
                         <div class="col-sm-10">
-                            <select name="deskripsi" id="ruanganSelect" class="form-control">
-                                <option value="">Pilih Ruangan</option>
-                                @foreach ($ruangan as $item)
-                                    <option value="{{ $item->id }}">{{ $item->nama_ruangan }}</option>
+                            <select name="id_barang" id="id_barang" class="form-select @error('id_barang') is-invalid @enderror" required onchange="onBarangPinjamChange()">
+                                <option value="">-- Pilih Master Barang --</option>
+                                @foreach ($barang as $item)
+                                    <option value="{{ $item->id }}"
+                                        data-serial="{{ $item->has_serial_number ? '1' : '0' }}"
+                                        data-satuan="{{ $item->unit?->symbol ?? 'pcs' }}"
+                                        data-stok="{{ (float) $item->stok }}"
+                                        data-serials="{{ json_encode($item->inventoryItems) }}"
+                                        {{ old('id_barang') == $item->id ? 'selected' : '' }}>
+                                        {{ $item->kode_barang }} - {{ $item->nama }} ({{ $item->merek }}) [Tersedia: {{ number_format((float)$item->stok, $item->unit?->is_decimal ? 2 : 0) }} {{ $item->unit?->symbol }}]
+                                    </option>
                                 @endforeach
                             </select>
-                            @error('deskripsi')
-                                <div class="invalid-feedback d-block mt-1 d-flex gap-1">
-                                    <i class="bx bx-error-circle"></i>
-                                    <p>{{ $message }}</p>
-                                </div>
-                            @enderror
-                        </div>
-                    </div>
-
-                    {{-- Pilih Barang --}}
-                    <div class="row mb-3">
-                        <label class="col-sm-2 col-form-label">Pilih Barang</label>
-                        <div class="col-sm-10">
-                            <div class="dropdown">
-                                <button style="text-align: left;" class="w-100 btn btn-outline-secondary dropdown-toggle"
-                                    type="button" id="dropdownBarang" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bx bx-box" style="margin-right: 5px;"></i> Pilih Barang
-                                </button>
-                                <ul class="dropdown-menu w-100" id="barangList" aria-labelledby="dropdownBarang">
-                                    <li><span class="dropdown-item">Silakan pilih ruangan terlebih dahulu</span></li>
-                                </ul>
-                            </div>
-                            <input type="hidden" name="id_barang" id="id_barang">
-                            <div id="barangTerpilih" class="mt-2 text-muted"></div>
-
+                            <div id="barangBadgeArea" class="mt-2"></div>
                             @error('id_barang')
-                                <div class="invalid-feedback d-block mt-1 d-flex gap-1">
-                                    <i class="bx bx-error-circle"></i>
-                                    <p>{{ $message }}</p>
-                                </div>
+                                <div class="invalid-feedback d-block mt-1">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
 
-                    <div class="row mb-3">
-                        <label class="col-sm-2 col-form-label" for="basic-icon-default-company">Jumlah</label>
-                        <div class="col-sm-10">
-                            <div class="input-group input-group-merge">
-                                <span id="basic-icon-default-company2" class="input-group-text"><i
-                                        class="bx bx-hash"></i></span>
-                                <input name="jumlah" type="number" class="form-control" placeholder="0"
-                                    aria-label="Samsung" aria-describedby="basic-icon-default-company2" />
+                    {{-- SECTION A: SERIALIZED UNIT SELECTION --}}
+                    <div id="serialSection" class="d-none">
+                        <div class="row mb-3">
+                            <label class="col-sm-2 col-form-label" for="inventory_item_id">Unit Serial Number <span class="text-danger">*</span></label>
+                            <div class="col-sm-10">
+                                <select name="inventory_item_id" id="inventory_item_id" class="form-select @error('inventory_item_id') is-invalid @enderror" onchange="onSerialSelectChange()">
+                                    <option value="">-- Pilih Nomor Seri Unit --</option>
+                                </select>
+                                @error('inventory_item_id')
+                                    <div class="invalid-feedback d-block mt-1">{{ $message }}</div>
+                                @enderror
                             </div>
+                        </div>
+                    </div>
+
+                    {{-- SECTION B: NON-SERIAL ROOM SELECTION --}}
+                    <div id="nonSerialRoomSection" class="d-none">
+                        <div class="row mb-3">
+                            <label class="col-sm-2 col-form-label" for="ruangan_id">Lokasi / Ruangan Asal</label>
+                            <div class="col-sm-10">
+                                <select name="ruangan_id" id="ruangan_id" class="form-select">
+                                    <option value="">-- Pilih Ruangan Asal --</option>
+                                    @foreach ($ruangan as $r)
+                                        <option value="{{ $r->id }}" {{ old('ruangan_id') == $r->id ? 'selected' : '' }}>
+                                            {{ $r->nama_ruangan }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- 2. QUANTITY --}}
+                    <div class="row mb-3">
+                        <label class="col-sm-2 col-form-label" for="jumlah">Jumlah Pinjam <span class="text-danger">*</span></label>
+                        <div class="col-sm-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bx bx-hash"></i></span>
+                                <input name="jumlah" type="number" step="any" min="0.01" id="jumlah" class="form-control @error('jumlah') is-invalid @enderror"
+                                    placeholder="0" value="{{ old('jumlah', 1) }}" required oninput="checkStockLimit()" />
+                                <span class="input-group-text satuan-label">pcs</span>
+                            </div>
+                            <small class="text-muted" id="stokTersediaHelp">Stok tersedia: <span id="maxStokDisplay">0</span> <span class="satuan-label">pcs</span></small>
                             @error('jumlah')
-                                <div class="invalid-feedback d-block mt-1 d-flex gap-1" style="margin-left: 15px;">
-                                    <i class="bx bx-error-circle"></i>
-                                    <p>{{ $message }}</p>
-                                </div>
+                                <div class="invalid-feedback d-block mt-1">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
+
+                    {{-- 3. NAMA PEMINJAM --}}
                     <div class="row mb-3">
-                        <label class="col-sm-2 col-form-label" for="basic-icon-default-company">Tanggal Pinjam</label>
+                        <label class="col-sm-2 col-form-label" for="nama_peminjam">Nama Peminjam <span class="text-danger">*</span></label>
                         <div class="col-sm-10">
                             <div class="input-group input-group-merge">
-                                <span id="basic-icon-default-company2" class="input-group-text"><i
-                                        class="bx bx-calendar"></i></span>
-                                <input name="tanggal_pinjam" type="date" class="form-control" placeholder="0" />
-                            </div>
-                            @error('tanggal_pinjam')
-                                <div class="invalid-feedback d-block mt-1 d-flex gap-1" style="margin-left: 15px;">
-                                    <i class="bx bx-error-circle"></i>
-                                    <p>{{ $message }}</p>
-                                </div>
-                            @enderror
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <label class="col-sm-2 col-form-label" for="basic-icon-default-company">Tanggal Kembali</label>
-                        <div class="col-sm-10">
-                            <div class="input-group input-group-merge">
-                                <span id="basic-icon-default-company2" class="input-group-text"><i
-                                        class="bx bx-calendar"></i></span>
-                                <input name="tanggal_kembali" type="date" class="form-control" placeholder="0" />
-                            </div>
-                            @error('tanggal_kembali')
-                                <div class="invalid-feedback d-block mt-1 d-flex gap-1" style="margin-left: 15px;">
-                                    <i class="bx bx-error-circle"></i>
-                                    <p>{{ $message }}</p>
-                                </div>
-                            @enderror
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <label class="col-sm-2 col-form-label" for="basic-icon-default-company">Nama Peminjam</label>
-                        <div class="col-sm-10">
-                            <div class="input-group input-group-merge">
-                                <span id="basic-icon-default-company2" class="input-group-text"><i
-                                        class="bx bx-user"></i></span>
-                                <input name="nama_peminjam" type="text" class="form-control"
-                                    placeholder="Masukan nama peminjam" />
+                                <span class="input-group-text"><i class="bx bx-user"></i></span>
+                                <input name="nama_peminjam" type="text" id="nama_peminjam" class="form-control @error('nama_peminjam') is-invalid @enderror"
+                                    placeholder="Nama karyawan / peminjam / pihak peminjam" value="{{ old('nama_peminjam') }}" required />
                             </div>
                             @error('nama_peminjam')
-                                <div class="invalid-feedback d-block mt-1 d-flex gap-1" style="margin-left: 15px;">
-                                    <i class="bx bx-error-circle"></i>
-                                    <p>{{ $message }}</p>
-                                </div>
+                                <div class="invalid-feedback d-block mt-1">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
-                    <div class="row justify-content-end">
+
+                    {{-- 4. TANGGAL PINJAM & RENCANA KEMBALI --}}
+                    <div class="row mb-3">
+                        <label class="col-sm-2 col-form-label" for="tanggal_pinjam">Tanggal Pinjam <span class="text-danger">*</span></label>
+                        <div class="col-sm-4">
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-calendar"></i></span>
+                                <input name="tanggal_pinjam" type="date" id="tanggal_pinjam" class="form-control"
+                                    value="{{ old('tanggal_pinjam', date('Y-m-d')) }}" required />
+                            </div>
+                        </div>
+
+                        <label class="col-sm-2 col-form-label text-sm-end" for="tanggal_kembali">Rencana Kembali <span class="text-danger">*</span></label>
+                        <div class="col-sm-4">
+                            <div class="input-group input-group-merge">
+                                <span class="input-group-text"><i class="bx bx-calendar-check"></i></span>
+                                <input name="tanggal_kembali" type="date" id="tanggal_kembali" class="form-control"
+                                    value="{{ old('tanggal_kembali', date('Y-m-d', strtotime('+7 days'))) }}" required />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row justify-content-end mt-4">
                         <div class="col-sm-10">
-                            <button type="submit" class="btn btn-primary">Kirim</button>
+                            <button type="submit" class="btn btn-warning px-4" id="submitBtn">
+                                <i class="bx bx-check-circle me-1"></i> Simpan Transaksi Peminjaman
+                            </button>
+                            <a href="{{ route('peminjaman.index') }}" class="btn btn-outline-secondary ms-2">Batal</a>
                         </div>
                     </div>
                 </form>
@@ -138,61 +138,103 @@
         </div>
     </div>
 
+    <script>
+        let availableQty = 0;
 
-<script>
-    document.getElementById('ruanganSelect').addEventListener('change', function () {
-        const ruanganId = this.value;
-        const barangList = document.getElementById('barangList');
-        const dropdownBtn = document.getElementById('dropdownBarang');
-        const inputIdBarang = document.getElementById('id_barang');
-        const barangTerpilih = document.getElementById('barangTerpilih');
+        function onBarangPinjamChange() {
+            const select = document.getElementById('id_barang');
+            const selectedOpt = select.options[select.selectedIndex];
 
-        // Reset input barang ketika ruangan berubah
-        inputIdBarang.value = '';
-        barangTerpilih.innerText = '';
-        dropdownBtn.innerHTML = `<i class="bx bx-box" style="margin-right: 5px;"></i> Pilih Barang`;
+            const serialSec = document.getElementById('serialSection');
+            const nonSerialRoomSec = document.getElementById('nonSerialRoomSection');
+            const serialSelect = document.getElementById('inventory_item_id');
+            const badgeArea = document.getElementById('barangBadgeArea');
+            const jumlahInput = document.getElementById('jumlah');
 
-        // Tampilkan pesan loading
-        barangList.innerHTML = '<li><span class="dropdown-item">Memuat data...</span></li>';
+            if (!selectedOpt.value) {
+                serialSec.classList.add('d-none');
+                nonSerialRoomSec.classList.add('d-none');
+                badgeArea.innerHTML = '';
+                availableQty = 0;
+                checkStockLimit();
+                return;
+            }
 
-        // Ambil barang berdasarkan ruangan via fetch
-        fetch(`{{ url('admin/get-barang-by-ruangan') }}/${ruanganId}`)
-            .then(response => response.json())
-            .then(data => {
-                barangList.innerHTML = '';
+            const isSerial = selectedOpt.dataset.serial === '1';
+            const satuan = selectedOpt.dataset.satuan || 'pcs';
+            const masterStok = parseFloat(selectedOpt.dataset.stok || 0);
 
-                if (!data || data.length === 0) {
-                    barangList.innerHTML = '<li><span class="dropdown-item">Tidak ada barang di ruangan ini</span></li>';
-                    return;
-                }
+            document.querySelectorAll('.satuan-label').forEach(el => el.innerText = satuan);
 
-                data.forEach(item => {
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                        <a class="dropdown-item d-flex align-items-start" href="#"
-                            onclick="pilihBarang('${item.id}', '${item.nama}', '${item.merek}')">
-                            <div>
-                                <div><strong>${item.nama}</strong> - ${item.merek}</div>
-                                <small class="text-muted">Stok: ${item.stok}</small>
-                            </div>
-                        </a>
-                        <hr class="my-1">
-                    `;
-                    barangList.appendChild(li);
+            if (isSerial) {
+                badgeArea.innerHTML = `<span class="badge bg-info"><i class="bx bx-barcode me-1"></i> Serialized</span>`;
+                serialSec.classList.remove('d-none');
+                nonSerialRoomSec.classList.add('d-none');
+                serialSelect.setAttribute('required', 'required');
+
+                let rawSerials = selectedOpt.dataset.serials;
+                let serials = [];
+                try {
+                    serials = JSON.parse(rawSerials);
+                } catch(e) {}
+
+                serialSelect.innerHTML = '<option value="">-- Pilih Nomor Seri Unit --</option>';
+                serials.forEach(item => {
+                    serialSelect.innerHTML += `<option value="${item.id}" data-qty="${item.current_quantity}">
+                        ${item.serial_number} (Tersedia: ${item.current_quantity} ${satuan})
+                    </option>`;
                 });
-            })
-            .catch(() => {
-                barangList.innerHTML =
-                    '<li><span class="dropdown-item text-danger">Gagal mengambil data barang</span></li>';
-            });
-    });
 
-    function pilihBarang(id, nama, merek) {
-        document.getElementById('id_barang').value = id;
-        document.getElementById('barangTerpilih').innerText = `Barang dipilih: ${nama} (${merek})`;
-        document.getElementById('dropdownBarang').innerHTML =
-            `<i class="bx bx-box" style="margin-right: 5px;"></i> ${nama} - ${merek}`;
-    }
-</script>
+                availableQty = 0;
+                jumlahInput.value = 1;
+            } else {
+                badgeArea.innerHTML = `<span class="badge bg-secondary"><i class="bx bx-cube me-1"></i> Non-Serial</span>`;
+                serialSec.classList.add('d-none');
+                nonSerialRoomSec.classList.remove('d-none');
+                serialSelect.removeAttribute('required');
 
+                availableQty = masterStok;
+            }
+
+            checkStockLimit();
+        }
+
+        function onSerialSelectChange() {
+            const serialSelect = document.getElementById('inventory_item_id');
+            const selectedOpt = serialSelect.options[serialSelect.selectedIndex];
+            const jumlahInput = document.getElementById('jumlah');
+
+            if (selectedOpt && selectedOpt.value) {
+                availableQty = parseFloat(selectedOpt.dataset.qty || 0);
+                if (availableQty == 1) {
+                    jumlahInput.value = 1;
+                }
+            } else {
+                availableQty = 0;
+            }
+
+            checkStockLimit();
+        }
+
+        function checkStockLimit() {
+            const jumlahInput = document.getElementById('jumlah');
+            const qty = parseFloat(jumlahInput.value || 0);
+            const display = document.getElementById('maxStokDisplay');
+            const submitBtn = document.getElementById('submitBtn');
+
+            display.innerText = availableQty.toLocaleString('id-ID');
+
+            if (qty > availableQty || qty <= 0) {
+                display.className = 'text-danger fw-bold';
+                submitBtn.setAttribute('disabled', 'disabled');
+            } else {
+                display.className = 'text-success fw-bold';
+                submitBtn.removeAttribute('disabled');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            onBarangPinjamChange();
+        });
+    </script>
 @endsection

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -23,17 +24,18 @@ class PengembalianExport implements FromCollection, WithHeadings, WithStyles, Wi
     public function collection()
     {
         return $this->pengembalians->map(function ($item, $index) {
-            $barang = $item->barang;
-
             return [
                 'No' => $index + 1,
-                'Kode Barang' => $item->kode_barang,
-                'Nama Barang' => $barang ? $barang->nama . ' - ' . $barang->merek : 'Tidak Ada Barang',
-                'Kode Barang (Barang)' => $barang ? $barang->kode_barang : 'Tidak Ada Barang',
-                'Jumlah' => $item->jumlah,
-                'Tanggal Kembali' => \Carbon\Carbon::parse($item->tanggal_kembali)->format('d-m-Y'),
+                'Kode Pengembalian' => $item->kode_barang,
                 'Nama Peminjam' => $item->nama_peminjam,
-                'Status' => $item->status,
+                'Nama Barang' => optional($item->barang)->nama,
+                'Merek' => optional($item->barang)->merek,
+                'Nomor Seri' => optional($item->inventoryItem)->serial_number ?? '-',
+                'Jumlah Kembali' => (float) $item->jumlah,
+                'Satuan' => optional(optional($item->barang)->unit)->symbol ?? 'pcs',
+                'Kondisi' => $item->kondisi,
+                'Tanggal Kembali' => \Carbon\Carbon::parse($item->tanggal_kembali)->format('d-m-Y'),
+                'Keterangan' => $item->keterangan ?? '-',
             ];
         });
     }
@@ -42,13 +44,16 @@ class PengembalianExport implements FromCollection, WithHeadings, WithStyles, Wi
     {
         return [
             'No',
-            'Kode Barang',
-            'Nama Barang',
-            'Kode Barang (Barang)',
-            'Jumlah',
-            'Tanggal Kembali',
+            'Kode Pengembalian',
             'Nama Peminjam',
-            'Status',
+            'Nama Barang',
+            'Merek',
+            'Nomor Seri',
+            'Jumlah Kembali',
+            'Satuan',
+            'Kondisi',
+            'Tanggal Kembali',
+            'Keterangan',
         ];
     }
 
@@ -56,14 +61,13 @@ class PengembalianExport implements FromCollection, WithHeadings, WithStyles, Wi
     {
         $highestRow = $sheet->getHighestRow();
 
-        $sheet->getStyle('A1:H1')->getFont()->setBold(true)->setSize(12)->setColor(new Color('FFFFFF'));
-        $sheet->getStyle('A1:H1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle('A1:H1')->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
-        $sheet->getStyle('A1:H1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('2196F3');
-        $sheet->getStyle('A2:H' . $highestRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-        $sheet->getStyle('A1:H' . $highestRow)->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A1:K1')->getFont()->setBold(true)->setSize(11)->setColor(new Color('FFFFFF'));
+        $sheet->getStyle('A1:K1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->getStyle('A1:K1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('4CAF50');
+        $sheet->getStyle('A2:K' . $highestRow)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+        $sheet->getStyle('A1:K' . $highestRow)->getAlignment()->setWrapText(true);
 
-        foreach (range('A', 'H') as $col) {
+        foreach (range('A', 'K') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
@@ -73,7 +77,7 @@ class PengembalianExport implements FromCollection, WithHeadings, WithStyles, Wi
     public function columnFormats(): array
     {
         return [
-            'F' => NumberFormat::FORMAT_DATE_DDMMYYYY,
+            'G' => NumberFormat::FORMAT_NUMBER_COMMA_SEPARATED1,
         ];
     }
 }

@@ -9,18 +9,25 @@ class BarangRuangans extends Model
 {
     use HasFactory;
 
+    protected $table = 'barang_ruangans';
+
     protected $fillable = [
-        'id',
         'barang_id',
         'ruangan_id',
         'stok',
     ];
 
-    public function barang() {
-        return $this->belongsTo(Barangs::class,'barang_id');
+    protected $casts = [
+        'stok' => 'decimal:2',
+    ];
+
+    public function barang()
+    {
+        return $this->belongsTo(Barangs::class, 'barang_id');
     }
 
-    public function ruangan() {
-        return $this->belongsTo(Ruangans::class,'ruangan_id');
+    public function ruangan()
+    {
+        return $this->belongsTo(Ruangans::class, 'ruangan_id');
     }
 }

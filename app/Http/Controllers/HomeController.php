@@ -1,15 +1,18 @@
 <?php
+
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Barangs;
+use App\Models\BarangKeluars;
+use App\Models\BarangMasuks;
+use App\Models\InventoryItem;
 use App\Models\Peminjamans;
 use App\Models\Pengembalians;
-use App\Models\User;
-use App\Models\BarangMasuks;
 use App\Models\Ruangans;
-use App\Models\BarangKeluars;
+use App\Models\StockMovement;
+use App\Models\Vendor;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 Carbon::setLocale('id');
 
@@ -22,47 +25,72 @@ class HomeController extends Controller
 
     public function index()
     {
-        $satuBulanLalu = Carbon::now()->subDays(7);
+        $satuBulanLalu = Carbon::now()->subDays(30);
+        $tujuhHariLalu = Carbon::now()->subDays(7);
+        $today = Carbon::today();
 
-        // Barang yang dibuat dalam 7 hari terakhir
-        $barang = Barangs::where('created_at', '>=', $satuBulanLalu)->count();
-        $barangStok = Barangs::where('created_at', '>=', $satuBulanLalu)->sum('stok');
+        // 1. Master Counts
+        $totalBarang = Barangs::where('is_active', true)->count();
+        $totalSerialBarang = Barangs::where('is_active', true)->where('has_serial_number', true)->count();
+        $totalNonSerialBarang = Barangs::where('is_active', true)->where('has_serial_number', false)->count();
 
-        $peminjaman = Peminjamans::where('tanggal_pinjam', '>=', $satuBulanLalu)
-            ->where('status', 'Sedang Dipinjam')
+        $totalSerialUnits = InventoryItem::whereNotIn('status', ['lost', 'damaged', 'depleted'])->count();
+        $totalStockUnits = Barangs::where('is_active', true)->sum('stok');
+
+        $totalRuangan = Ruangans::count();
+        $totalVendor = Vendor::count();
+
+        // 2. Loans & Overdue
+        $activeLoansCount = Peminjamans::where('status', 'Sedang Dipinjam')->count();
+        $overdueLoansCount = Peminjamans::where('status', 'Sedang Dipinjam')
+            ->whereDate('tanggal_kembali', '<', $today)
             ->count();
-        
-        $peminjamanStok = Peminjamans::where('tanggal_pinjam', '>=', $satuBulanLalu)
-            ->where('status', 'Sedang Dipinjam')
-            ->sum('jumlah');
 
-        // Pengembalian (dalam 1 bulan terakhir)
-        $pengembalian = Pengembalians::where('tanggal_kembali', '>=', $satuBulanLalu)->count();
-        $pengembalianStok = Pengembalians::where('tanggal_kembali', '>=', $satuBulanLalu)->sum('jumlah');
+        // 3. Transactions 30 days
+        $totalMasukCount = BarangMasuks::where('tanggal_masuk', '>=', $satuBulanLalu)->count();
+        $totalMasukQty = BarangMasuks::where('tanggal_masuk', '>=', $satuBulanLalu)->sum('jumlah');
 
-        // Ruangan
-        $ruangan = Ruangans::count();
+        $totalKeluarCount = BarangKeluars::where('tanggal_keluar', '>=', $satuBulanLalu)->count();
+        $totalKeluarQty = BarangKeluars::where('tanggal_keluar', '>=', $satuBulanLalu)->sum('jumlah');
 
-        // Barang Masuk (dalam 1 bulan terakhir)
-        $barangMasuk = BarangMasuks::where('tanggal_masuk', '>=', $satuBulanLalu)->count();
+        $totalPengembalianCount = Pengembalians::where('tanggal_kembali', '>=', $satuBulanLalu)->count();
 
-        // Barang Keluar (dalam 1 bulan terakhir)
-        $barangKeluar = BarangKeluars::where('tanggal_keluar', '>=', $satuBulanLalu)->count();
+        // 4. Recent Stock Movements
+        $recentMovements = StockMovement::with(['barang.unit', 'inventoryItem', 'ruangan', 'user'])
+            ->orderBy('id', 'desc')
+            ->limit(10)
+            ->get();
 
-        // Total Stok Masuk (dalam 1 bulan terakhir)
-        $totalStokMasuk = BarangMasuks::where('tanggal_masuk', '>=', $satuBulanLalu)->sum('jumlah');
+        // 5. Chart 7-day mutations
+        $chartLabels = [];
+        $chartMasuk = [];
+        $chartKeluar = [];
 
-        // Total Stok Keluar (dalam 1 bulan terakhir)
-        $totalStokKeluar = BarangKeluars::where('tanggal_keluar', '>=', $satuBulanLalu)->sum('jumlah');
-
-        $total = $barang + $peminjaman + $pengembalian + $ruangan + $barangMasuk + $barangKeluar;
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::today()->subDays($i);
+            $chartLabels[] = $date->translatedFormat('D, d M');
+            $chartMasuk[] = (float) BarangMasuks::whereDate('tanggal_masuk', $date)->sum('jumlah');
+            $chartKeluar[] = (float) BarangKeluars::whereDate('tanggal_keluar', $date)->sum('jumlah');
+        }
 
         $chartData = [
-            'labels' => ['Barang', 'Ruangan', 'Barang Masuk', 'Barang Keluar', 'Peminjaman', 'Pengembalian'],
-            'series' => [$barang, $ruangan, $barangMasuk, $barangKeluar, $peminjaman, $pengembalian],
-            'pinjamkembali' => ['Peminjaman', 'Pengembalian'],
-            'pinjamkembaliseries' => [$peminjaman, $pengembalian]
+            'labels' => ['Master Barang', 'Unit Serial', 'Ruangan', 'Masuk (30h)', 'Keluar (30h)', 'Pinjam Aktif'],
+            'series' => [$totalBarang, $totalSerialUnits, $totalRuangan, $totalMasukCount, $totalKeluarCount, $activeLoansCount],
         ];
+
+        // Aliases for legacy view variables if referenced
+        $barang = $totalBarang;
+        $barangStok = $totalStockUnits;
+        $peminjaman = $activeLoansCount;
+        $peminjamanStok = Peminjamans::where('status', 'Sedang Dipinjam')->sum('jumlah');
+        $pengembalian = $totalPengembalianCount;
+        $pengembalianStok = Pengembalians::where('tanggal_kembali', '>=', $satuBulanLalu)->sum('jumlah');
+        $ruangan = $totalRuangan;
+        $barangMasuk = $totalMasukCount;
+        $barangKeluar = $totalKeluarCount;
+        $total = $totalBarang + $activeLoansCount + $totalPengembalianCount + $totalRuangan + $totalMasukCount + $totalKeluarCount;
+        $totalStokMasuk = $totalMasukQty;
+        $totalStokKeluar = $totalKeluarQty;
 
         return view('home', compact(
             'chartData',
@@ -77,7 +105,15 @@ class HomeController extends Controller
             'barangKeluar',
             'total',
             'totalStokMasuk',
-            'totalStokKeluar'
+            'totalStokKeluar',
+            'totalSerialBarang',
+            'totalNonSerialBarang',
+            'totalSerialUnits',
+            'overdueLoansCount',
+            'recentMovements',
+            'chartLabels',
+            'chartMasuk',
+            'chartKeluar'
         ));
     }
 }

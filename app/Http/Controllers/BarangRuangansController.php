@@ -2,54 +2,59 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
-use App\Models\Barangs;
-use App\Models\BarangMasuks;
-use App\Models\Ruangans;
-use App\Models\BarangRuangans;
-use RealRashid\SweetAlert\Facades\Alert;
 use App\Exports\BarangRuanganExport;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Requests\StoreTransferRequest;
+use App\Models\Barangs;
+use App\Models\BarangRuangans;
+use App\Models\InventoryItem;
+use App\Models\Ruangans;
+use App\Services\TransferService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
+use RealRashid\SweetAlert\Facades\Alert;
 
-\Carbon\Carbon::setLocale('id');
+Carbon::setLocale('id');
 
 class BarangRuangansController extends Controller
 {
+    protected TransferService $transferService;
 
+    public function __construct(TransferService $transferService)
+    {
+        $this->middleware('auth');
+        $this->transferService = $transferService;
+    }
+
+    /**
+     * Display listing of stocks in rooms
+     */
     public function index(Request $request)
     {
         $keyword = $request->input('search');
         $exportType = $request->input('export');
         $byClass = $request->input('byClass');
 
-        // Query utama barang ruangan
-        $barangRuanganQuery = BarangRuangans::with(['ruangan', 'barang'])
-            ->join('barangs', 'barang_ruangans.barang_id', '=', 'barangs.id')
-            ->join('ruangans', 'barang_ruangans.ruangan_id', '=', 'ruangans.id')
-            ->select('barang_ruangans.*')
-            ->where('barang_ruangans.stok', '>', 0)
-            ->orderBy('ruangans.nama_ruangan', 'asc');
-
-        // Filter berdasarkan kelas/ruangan
-        if ($byClass) {
-            $barangRuanganQuery->where('barang_ruangans.ruangan_id', $byClass);
-        }
-
-        // Filter pencarian
-        if ($keyword) {
-            $barangRuanganQuery->where(function ($query) use ($keyword) {
-                $query->whereHas('ruangan', function ($q) use ($keyword) {
-                    $q->where('nama_ruangan', 'like', "%$keyword%")
-                        ->orWhere('deskripsi', 'like', "%$keyword%");
-                })->orWhereHas('barang', function ($q) use ($keyword) {
-                    $q->where('nama', 'like', "%$keyword%")
-                        ->orWhere('merek', 'like', "%$keyword%");
+        $barangRuanganQuery = BarangRuangans::with(['ruangan', 'barang.unit'])
+            ->where('stok', '>', 0)
+            ->when($byClass, function ($q) use ($byClass) {
+                $q->where('ruangan_id', $byClass);
+            })
+            ->when($keyword, function ($q) use ($keyword) {
+                $q->where(function ($sub) use ($keyword) {
+                    $sub->whereHas('ruangan', function ($r) use ($keyword) {
+                        $r->where('nama_ruangan', 'like', "%{$keyword}%")
+                          ->orWhere('deskripsi', 'like', "%{$keyword}%");
+                    })->orWhereHas('barang', function ($b) use ($keyword) {
+                        $b->where('nama', 'like', "%{$keyword}%")
+                          ->orWhere('merek', 'like', "%{$keyword}%")
+                          ->orWhere('kode_barang', 'like', "%{$keyword}%");
+                    });
                 });
             });
-        }
 
         // Export jika diminta
         if ($exportType) {
@@ -65,22 +70,60 @@ class BarangRuangansController extends Controller
             }
         }
 
-        // Data paginasi
-        $barangRuangan = $barangRuanganQuery->paginate(10)->withQueryString();
+        $barangRuangan = $barangRuanganQuery->paginate(15)->withQueryString();
 
-        // Ambil daftar ruangan untuk filter dropdown
-        $ruangan = Ruangans::whereHas('barangRuangan', function ($query) {
-            $query->where('stok', '>', 0);
-        })
-        ->orderBy('nama_ruangan')
-        ->get();
+        // Also query serialized items per room if filtering by room
+        $serializedInRoom = [];
+        if ($byClass) {
+            $serializedInRoom = InventoryItem::with(['barang.unit'])
+                ->where('ruangan_id', $byClass)
+                ->whereNotIn('status', ['lost', 'damaged', 'depleted'])
+                ->orderBy('serial_number', 'asc')
+                ->get();
+        }
 
-        return view('barangruangan.index', compact('barangRuangan', 'ruangan', 'keyword', 'byClass'));
+        $ruangan = Ruangans::orderBy('nama_ruangan', 'asc')->get();
+        $barangsNonSerial = Barangs::where('has_serial_number', false)->where('stok', '>', 0)->get();
+
+        return view('barangruangan.index', compact('barangRuangan', 'serializedInRoom', 'ruangan', 'keyword', 'byClass', 'barangsNonSerial'));
+    }
+
+    /**
+     * Transfer stock between rooms (handles both non-serialized and serialized)
+     */
+    public function transfer(StoreTransferRequest $request)
+    {
+        try {
+            if ($request->type === 'serialized') {
+                $item = $this->transferService->transferSerialized(
+                    (int) $request->inventory_item_id,
+                    (int) $request->to_ruangan_id,
+                    $request->keterangan,
+                    Auth::id()
+                );
+                Alert::success('Berhasil!', "Unit serial {$item->serial_number} berhasil dipindahkan ke ruangan baru.");
+            } else {
+                $this->transferService->transferNonSerialized(
+                    (int) $request->barang_id,
+                    (int) $request->from_ruangan_id,
+                    (int) $request->to_ruangan_id,
+                    (float) $request->quantity,
+                    $request->keterangan,
+                    Auth::id()
+                );
+                Alert::success('Berhasil!', "Stok barang berhasil dipindahkan ke ruangan tujuan.");
+            }
+
+            return redirect()->back();
+        } catch (Exception $e) {
+            Alert::error('Gagal!', 'Terjadi kesalahan: ' . $e->getMessage());
+            return redirect()->back()->withInput();
+        }
     }
 
     public function show($id)
     {
-        $barangRuangan = BarangRuangans::findOrFail($id);
+        $barangRuangan = BarangRuangans::with(['barang.unit', 'ruangan'])->findOrFail($id);
         return view('barangruangan.show', compact('barangRuangan'));
     }
 }
